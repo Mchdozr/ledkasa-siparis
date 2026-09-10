@@ -1,0 +1,21 @@
+﻿<MudNavMenu Bordered="false" Color="Color.Secondary" Class="lk-nav">
+    <MudText Typo="Typo.overline" Class="px-4 pt-4 lk-nav-label">Operasyon</MudText>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.SpaceDashboard">Panel</MudNavLink>
+    <AuthorizeView Policy="@Policies.OrdersView">
+        <MudNavLink Href="/orders" Icon="@Icons.Material.Filled.Assignment">Siparişler</MudNavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@Policies.OrdersCreate">
+        <MudNavLink Href="/orders/new" Icon="@Icons.Material.Filled.AddBox">Yeni Sipariş</MudNavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@Policies.ReportsView">
+        <MudText Typo="Typo.overline" Class="px-4 pt-4 lk-nav-label">Muhasebe</MudText>
+        <MudNavLink Href="/reports" Icon="@Icons.Material.Filled.Assessment">Liste Raporları</MudNavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@Policies.AdminUsers">
+        <MudText Typo="Typo.overline" Class="px-4 pt-4 lk-nav-label">Yönetim</MudText>
+        <MudNavLink Href="/admin/users" Icon="@Icons.Material.Filled.ManageAccounts">Kullanıcılar</MudNavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@Policies.AdminFeatures">
+        <MudNavLink Href="/admin/features" Icon="@Icons.Material.Filled.Tune">Ekstra Özellikler</MudNavLink>
+    </AuthorizeView>
+</MudNavMenu>

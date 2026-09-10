@@ -1,0 +1,258 @@
+:root {
+    --lk-navy: #0b1f3a;
+    --lk-orange: #f46f2c;
+    --lk-bg: #f4f6f8;
+    --lk-ink: #122033;
+}
+
+html, body {
+    font-family: Manrope, "Segoe UI", sans-serif;
+    background: var(--lk-bg);
+    color: var(--lk-ink);
+}
+
+.lk-appbar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lk-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lk-brand small {
+    display: block;
+    opacity: 0.72;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}
+
+.lk-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--lk-orange);
+    color: white;
+    font-weight: 800;
+}
+
+.lk-mark.lg {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+}
+
+.lk-drawer {
+    background: var(--lk-navy) !important;
+}
+
+.lk-nav .mud-nav-link {
+    color: #d7e2ee !important;
+    border-radius: 10px;
+    margin: 2px 10px;
+}
+
+.lk-nav-label {
+    color: #8ea0b5 !important;
+}
+
+.lk-main {
+    min-height: 100vh;
+    background:
+        radial-gradient(800px 280px at 10% -10%, rgba(244, 111, 44, 0.08), transparent 50%),
+        var(--lk-bg);
+}
+
+.lk-page {
+    padding: 24px 24px 96px;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.lk-page-title {
+    margin: 0;
+    font-size: 1.7rem;
+    font-weight: 800;
+}
+
+.lk-page-sub {
+    margin: 4px 0 20px;
+    color: #5b6b7c;
+}
+
+.lk-card {
+    border: 1px solid #e4e9ef;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(11, 31, 58, 0.04) !important;
+}
+
+.lk-stat {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 18px;
+}
+
+.lk-stat.warn {
+    border-color: #f3d19a;
+}
+
+.lk-stat small {
+    display: block;
+    color: #5b6b7c;
+}
+
+.lk-stat strong {
+    font-size: 1.6rem;
+}
+
+.lk-toolbar,
+.lk-actions,
+.lk-status-row,
+.lk-upcoming,
+.lk-mobile-card__top,
+.lk-kv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.lk-toolbar {
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.lk-status-row,
+.lk-upcoming {
+    padding: 10px 0;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.lk-upcoming div,
+.lk-mobile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lk-mobile-card {
+    cursor: pointer;
+}
+
+.lk-kv {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 10px 16px;
+}
+
+.lk-table {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.lk-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-around;
+    background: #0b1f3a;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    z-index: 20;
+}
+
+.lk-bottom-nav__item {
+    color: #c5d2e0;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 11px;
+    min-width: 64px;
+    min-height: 48px;
+    justify-content: center;
+}
+
+.lk-bottom-nav__item.active,
+.lk-bottom-nav__item.mud-nav-link-active {
+    color: #f46f2c;
+}
+
+.auth-shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+        linear-gradient(160deg, #0b1f3a 0%, #16345c 52%, #0b1f3a 100%);
+}
+
+.auth-card {
+    width: min(440px, 100%);
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+.auth-hero {
+    margin-bottom: 24px;
+}
+
+.auth-hero h1 {
+    margin: 12px 0 8px;
+}
+
+.auth-hero p {
+    color: #5b6b7c;
+}
+
+.auth-form {
+    display: grid;
+    gap: 14px;
+}
+
+.auth-form label {
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.auth-form input {
+    border: 1px solid #d5dde6;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font: inherit;
+}
+
+.auth-form button {
+    margin-top: 8px;
+    border: 0;
+    border-radius: 12px;
+    background: #0b1f3a;
+    color: #fff;
+    padding: 13px 16px;
+    font-weight: 700;
+    min-height: 48px;
+}
+
+.lk-alert {
+    background: #fdecea;
+    color: #9b1c1c;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+}
+
+@media (min-width: 1280px) {
+    .lk-page {
+        padding-bottom: 40px;
+    }
+}

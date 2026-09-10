@@ -1,0 +1,24 @@
+<nav class="lk-bottom-nav d-lg-none" aria-label="Alt menü">
+    <NavLink href="/" Match="NavLinkMatch.All" class="lk-bottom-nav__item">
+        <MudIcon Icon="@Icons.Material.Filled.SpaceDashboard" />
+        <span>Panel</span>
+    </NavLink>
+    <AuthorizeView Policy="@Policies.OrdersView">
+        <NavLink href="/orders" class="lk-bottom-nav__item">
+            <MudIcon Icon="@Icons.Material.Filled.Assignment" />
+            <span>Sipariş</span>
+        </NavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@Policies.OrdersCreate">
+        <NavLink href="/orders/new" class="lk-bottom-nav__item">
+            <MudIcon Icon="@Icons.Material.Filled.AddCircle" />
+            <span>Yeni</span>
+        </NavLink>
+    </AuthorizeView>
+    <AuthorizeView Policy="@Policies.ReportsView">
+        <NavLink href="/reports" class="lk-bottom-nav__item">
+            <MudIcon Icon="@Icons.Material.Filled.Assessment" />
+            <span>Rapor</span>
+        </NavLink>
+    </AuthorizeView>
+</nav>

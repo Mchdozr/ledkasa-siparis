@@ -1,0 +1,31 @@
+@if (!_online)
+{
+    <MudChip T="string" Color="Color.Warning" Size="Size.Small" Class="mr-2">Çevrimdışı</MudChip>
+}
+
+@code {
+    private bool _online = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            _online = await JS.InvokeAsync<bool>("ledkasaPwa.isOnline");
+            await JS.InvokeVoidAsync("ledkasaPwa.onOnlineChange", DotNetObjectReference.Create(this));
+            StateHasChanged();
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    [JSInvokable]
+    public void SetOnline(bool online)
+    {
+        _online = online;
+        InvokeAsync(StateHasChanged);
+    }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+}

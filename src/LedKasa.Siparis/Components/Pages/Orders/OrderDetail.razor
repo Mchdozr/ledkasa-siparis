@@ -1,0 +1,120 @@
+@page "/orders/{Id:int}"
+@attribute [Authorize(Policy = Policies.OrdersView)]
+@rendermode InteractiveServer
+@inject IOrderService Orders
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Sipariş detayı — LEDKASA</PageTitle>
+
+@if (_order is null && !_missing)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Secondary" />
+}
+else if (_missing || _order is null)
+{
+    <MudAlert Severity="Severity.Warning">Sipariş bulunamadı.</MudAlert>
+}
+else
+{
+    <div class="lk-toolbar">
+        <div>
+            <h1 class="lk-page-title">@_order.OrderNumber</h1>
+            <p class="lk-page-sub">@_order.CustomerName · @DisplayNames.Place(_order.DeliveryPlace)</p>
+        </div>
+        <div class="lk-actions">
+            <AuthorizeView Policy="@Policies.OrdersEdit">
+                @if (_order.CanEdit)
+                {
+                    <MudButton Variant="Variant.Outlined" Href="@($"/orders/{_order.Id}/edit")">Düzenle</MudButton>
+                }
+            </AuthorizeView>
+        </div>
+    </div>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="8">
+            <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+                <div class="lk-kv">
+                    <span>Sipariş tarihi</span><strong>@TurkeyTime.FormatDate(_order.OrderDate)</strong>
+                    <span>Teslim tarihi</span><strong>@TurkeyTime.FormatDate(_order.DeliveryDate)</strong>
+                    <span>Durum</span><StatusChip Status="_order.Status" />
+                    <span>Toplam</span><strong>@TurkeyTime.FormatMoney(_order.GrandTotal)</strong>
+                    <span>Not</span><strong>@(_order.Notes ?? "—")</strong>
+                </div>
+            </MudPaper>
+
+            @foreach (var item in _order.Items)
+            {
+                <MudPaper Class="lk-card pa-4 mb-3" Elevation="0">
+                    <MudText Typo="Typo.subtitle1">@item.WidthCm.ToString("0.##") × @item.HeightCm.ToString("0.##") cm</MudText>
+                    <MudText>@item.Quantity adet · @TurkeyTime.FormatMoney(item.UnitPrice) × @item.Quantity = @TurkeyTime.FormatMoney(item.LineTotal)</MudText>
+                    @if (item.ExtraFeatureNames.Count > 0)
+                    {
+                        <div class="mt-2">
+                            @foreach (var name in item.ExtraFeatureNames)
+                            {
+                                <MudChip T="string" Size="Size.Small">@name</MudChip>
+                            }
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(item.Note))
+                    {
+                        <MudText Typo="Typo.caption">@item.Note</MudText>
+                    }
+                </MudPaper>
+            }
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <AuthorizeView Policy="@Policies.OrdersChangeStatus">
+                <MudPaper Class="lk-card pa-4" Elevation="0">
+                    <MudText Typo="Typo.h6">Süreç</MudText>
+                    @if (_order.AllowedNextStatuses.Count == 0)
+                    {
+                        <MudText Color="Color.Secondary" Class="mt-2">Bu siparişin durumu kilitli.</MudText>
+                    }
+                    else
+                    {
+                        @foreach (var next in _order.AllowedNextStatuses)
+                        {
+                            <MudButton Variant="Variant.Filled"
+                                       Color="@(next == OrderStatus.Iptal ? Color.Error : Color.Primary)"
+                                       FullWidth="true" Class="mt-2"
+                                       OnClick="() => ChangeStatus(next)">
+                                @DisplayNames.Status(next)
+                            </MudButton>
+                        }
+                    }
+                </MudPaper>
+            </AuthorizeView>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private OrderDetailDto? _order;
+    private bool _missing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _order = await Orders.GetAsync(Id);
+        _missing = _order is null;
+    }
+
+    private async Task ChangeStatus(OrderStatus next)
+    {
+        if (_order is null) return;
+        try
+        {
+            await Orders.ChangeStatusAsync(_order.Id, next, _order.RowVersion);
+            _order = await Orders.GetAsync(Id);
+            Snackbar.Add("Durum güncellendi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

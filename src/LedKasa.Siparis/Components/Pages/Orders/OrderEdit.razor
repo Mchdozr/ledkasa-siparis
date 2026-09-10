@@ -1,0 +1,195 @@
+@page "/orders/new"
+@page "/orders/{Id:int}/edit"
+@attribute [Authorize(Policy = Policies.OrdersCreate)]
+@rendermode InteractiveServer
+@inject IOrderService Orders
+@inject IExtraFeatureService Features
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>@(Id is null ? "Yeni sipariş" : "Sipariş düzenle") — LEDKASA</PageTitle>
+
+<h1 class="lk-page-title">@(Id is null ? "Yeni sipariş" : "Siparişi düzenle")</h1>
+<p class="lk-page-sub">Sipariş veren kişi, ölçüler, ekstra özellik ve teslim bilgileri.</p>
+
+<EditForm Model="_draft" OnValidSubmit="SaveAsync">
+    <DataAnnotationsValidator />
+    <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_draft.CustomerName" Label="Sipariş veren kişi" Variant="Variant.Outlined" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect T="DeliveryPlace" @bind-Value="_draft.DeliveryPlace" Label="Teslim yeri" Variant="Variant.Outlined">
+                    <MudSelectItem Value="DeliveryPlace.Sirket">Şirket</MudSelectItem>
+                    <MudSelectItem Value="DeliveryPlace.Fabrika">Fabrika</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudDatePicker Date="_orderDate" DateChanged="OnOrderDate" Label="Sipariş tarihi" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudDatePicker Date="_deliveryDate" DateChanged="OnDeliveryDate" Label="Teslim tarihi" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
+            </MudItem>
+            <MudItem xs="12" md="9">
+                <MudTextField @bind-Value="_draft.Notes" Label="Sipariş notu" Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+        </MudGrid>
+        <ValidationSummary />
+    </MudPaper>
+
+    @for (var i = 0; i < _draft.Items.Count; i++)
+    {
+        var index = i;
+        var item = _draft.Items[index];
+        <MudPaper Class="lk-card pa-4 mb-3" Elevation="0">
+            <div class="lk-toolbar">
+                <MudText Typo="Typo.subtitle1">Kalem @(index + 1)</MudText>
+                @if (_draft.Items.Count > 1)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveItem(index)" aria-label="Kalemi sil" />
+                }
+            </div>
+            <MudGrid Spacing="3">
+                <MudItem xs="6" md="3">
+                    <MudNumericField @bind-Value="item.WidthCm" Label="Yatay (cm)" Variant="Variant.Outlined" Min="0.01m" Step="0.01m" HideSpinButtons="true" />
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudNumericField @bind-Value="item.HeightCm" Label="Dikey (cm)" Variant="Variant.Outlined" Min="0.01m" Step="0.01m" HideSpinButtons="true" />
+                </MudItem>
+                <MudItem xs="6" md="2">
+                    <MudNumericField @bind-Value="item.Quantity" Label="Adet" Variant="Variant.Outlined" Min="1" Immediate="true" />
+                </MudItem>
+                <MudItem xs="6" md="2">
+                    <MudNumericField @bind-Value="item.UnitPrice" Label="Birim fiyat (₺)" Variant="Variant.Outlined" Min="0m" Step="0.01m" HideSpinButtons="true" Immediate="true" />
+                </MudItem>
+                <MudItem xs="6" md="2" Class="d-flex align-center">
+                    <MudText>Kalem: @TurkeyTime.FormatMoney(item.LineTotal)</MudText>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="int" MultiSelection="true" @bind-SelectedValues="item.ExtraFeatureIds" Label="Ekstra özellik"
+                               Variant="Variant.Outlined" MultiSelectionTextFunc="GetFeatureText">
+                        @foreach (var feature in _features)
+                        {
+                            <MudSelectItem T="int" Value="@feature.Id">@feature.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="item.Note" Label="Kalem notu" Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+
+    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddItem" Class="mb-4">Kalem ekle</MudButton>
+
+    <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+        <MudText Typo="Typo.h6">Sipariş toplamı: @TurkeyTime.FormatMoney(_draft.GrandTotal)</MudText>
+    </MudPaper>
+
+    <div class="lk-actions">
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Kaydet</MudButton>
+        <MudButton Variant="Variant.Text" Href="/orders">Vazgeç</MudButton>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private readonly OrderDraft _draft = new()
+    {
+        OrderDate = TurkeyTime.Today,
+        DeliveryDate = TurkeyTime.Today.AddDays(2)
+    };
+
+    private DateTime? _orderDate;
+    private DateTime? _deliveryDate;
+    private IReadOnlyList<ExtraFeatureDto> _features = [];
+    private DateTime _rowVersion;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _features = await Features.ListAsync(activeOnly: true);
+        _orderDate = _draft.OrderDate.ToDateTime(TimeOnly.MinValue);
+        _deliveryDate = _draft.DeliveryDate.ToDateTime(TimeOnly.MinValue);
+
+        if (Id is null)
+            return;
+
+        var existing = await Orders.GetAsync(Id.Value);
+        if (existing is null)
+        {
+            Navigation.NavigateTo("/orders");
+            return;
+        }
+
+        _draft.CustomerName = existing.CustomerName;
+        _draft.OrderDate = existing.OrderDate;
+        _draft.DeliveryDate = existing.DeliveryDate;
+        _draft.DeliveryPlace = existing.DeliveryPlace;
+        _draft.Notes = existing.Notes;
+        _draft.Items = existing.Items.Select(i => new OrderItemInput
+        {
+            WidthCm = i.WidthCm,
+            HeightCm = i.HeightCm,
+            Quantity = i.Quantity,
+            UnitPrice = i.UnitPrice,
+            ExtraFeatureIds = i.ExtraFeatureIds.ToHashSet(),
+            Note = i.Note
+        }).ToList();
+        _rowVersion = existing.RowVersion;
+        _orderDate = existing.OrderDate.ToDateTime(TimeOnly.MinValue);
+        _deliveryDate = existing.DeliveryDate.ToDateTime(TimeOnly.MinValue);
+    }
+
+    private void OnOrderDate(DateTime? value)
+    {
+        _orderDate = value;
+        if (value.HasValue)
+            _draft.OrderDate = DateOnly.FromDateTime(value.Value);
+    }
+
+    private void OnDeliveryDate(DateTime? value)
+    {
+        _deliveryDate = value;
+        if (value.HasValue)
+            _draft.DeliveryDate = DateOnly.FromDateTime(value.Value);
+    }
+
+    private void AddItem() => _draft.Items.Add(new OrderItemInput());
+
+    private void RemoveItem(int index) => _draft.Items.RemoveAt(index);
+
+    private string GetFeatureText(List<string> selected)
+        => selected.Count == 0 ? "Seçiniz" : string.Join(", ", _features.Where(f => selected.Contains(f.Id.ToString())).Select(f => f.Name));
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        try
+        {
+            if (Id is null)
+            {
+                var createdId = await Orders.CreateAsync(_draft);
+                Snackbar.Add("Sipariş oluşturuldu.", Severity.Success);
+                Navigation.NavigateTo($"/orders/{createdId}");
+            }
+            else
+            {
+                await Orders.UpdateAsync(Id.Value, _draft, _rowVersion);
+                Snackbar.Add("Sipariş güncellendi.", Severity.Success);
+                Navigation.NavigateTo($"/orders/{Id.Value}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

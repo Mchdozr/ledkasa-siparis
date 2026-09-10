@@ -1,0 +1,18 @@
+<MudChip T="string" Size="Size.Small" Color="@ColorFor(Status)" Variant="Variant.Filled">
+    @DisplayNames.Status(Status)
+</MudChip>
+
+@code {
+    [Parameter, EditorRequired] public OrderStatus Status { get; set; }
+
+    private static Color ColorFor(OrderStatus status) => status switch
+    {
+        OrderStatus.Yeni => Color.Info,
+        OrderStatus.Onaylandi => Color.Primary,
+        OrderStatus.Uretimde => Color.Warning,
+        OrderStatus.Hazir => Color.Secondary,
+        OrderStatus.TeslimEdildi => Color.Success,
+        OrderStatus.Iptal => Color.Error,
+        _ => Color.Default
+    };
+}

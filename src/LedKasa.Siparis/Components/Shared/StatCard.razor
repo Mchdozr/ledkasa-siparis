@@ -1,0 +1,15 @@
+<MudPaper Class="@($"lk-card lk-stat {(Tone == "warn" ? "warn" : "")}")" Elevation="0">
+    <MudIcon Icon="@Icon" Color="@(Tone == "warn" ? Color.Warning : Color.Secondary)" />
+    <div>
+        <small>@Title</small>
+        <strong>@(string.IsNullOrWhiteSpace(Text) ? Value.ToString() : Text)</strong>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public int Value { get; set; }
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Insights;
+    [Parameter] public string Tone { get; set; } = "default";
+}

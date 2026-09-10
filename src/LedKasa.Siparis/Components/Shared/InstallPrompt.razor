@@ -1,0 +1,29 @@
+@if (_canInstall)
+{
+    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" Class="mr-2"
+               OnClick="InstallAsync">Yükle</MudButton>
+}
+
+@code {
+    private bool _canInstall;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            _canInstall = await JS.InvokeAsync<bool>("ledkasaPwa.canInstall");
+            StateHasChanged();
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    private async Task InstallAsync()
+    {
+        _canInstall = !await JS.InvokeAsync<bool>("ledkasaPwa.install");
+    }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+}

@@ -1,0 +1,83 @@
+@page "/"
+@attribute [Authorize(Policy = Policies.OrdersView)]
+@rendermode InteractiveServer
+@inject IDashboardService DashboardService
+
+<PageTitle>Panel — LEDKASA Sipariş</PageTitle>
+
+<h1 class="lk-page-title">Operasyon paneli</h1>
+<p class="lk-page-sub">Bugünün siparişleri, açık işler ve yaklaşan teslimler.</p>
+
+@if (_snapshot is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Secondary" />
+}
+else
+{
+    <MudGrid Spacing="3">
+        <MudItem xs="6" md="3"><StatCard Title="Bugün" Value="@_snapshot.TodayCount" Icon="@Icons.Material.Filled.Today" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Açık sipariş" Value="@_snapshot.OpenCount" Icon="@Icons.Material.Filled.PendingActions" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Bu hafta teslim" Value="@_snapshot.WeekDeliveryCount" Icon="@Icons.Material.Filled.LocalShipping" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Geciken" Value="@_snapshot.OverdueCount" Tone="warn" Icon="@Icons.Material.Filled.WarningAmber" /></MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3" Class="mt-2">
+        <MudItem xs="12" md="5">
+            <MudPaper Class="lk-card pa-4" Elevation="0">
+                <MudText Typo="Typo.h6">Durum dağılımı</MudText>
+                @if (_snapshot.StatusCounts.Count == 0)
+                {
+                    <MudText Class="mt-4" Color="Color.Secondary">Henüz sipariş yok.</MudText>
+                }
+                else
+                {
+                    @foreach (var item in _snapshot.StatusCounts.OrderBy(s => s.Status))
+                    {
+                        <div class="lk-status-row">
+                            <StatusChip Status="item.Status" />
+                            <strong>@item.Count</strong>
+                        </div>
+                    }
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="7">
+            <MudPaper Class="lk-card pa-4" Elevation="0">
+                <MudText Typo="Typo.h6">Yaklaşan teslimler</MudText>
+                @if (_snapshot.Upcoming.Count == 0)
+                {
+                    <MudText Class="mt-4" Color="Color.Secondary">Yaklaşan teslim bulunmuyor.</MudText>
+                }
+                else
+                {
+                    <MudList T="string" Dense="true" Class="mt-2">
+                        @foreach (var item in _snapshot.Upcoming)
+                        {
+                            <MudListItem T="string" Href="@($"/orders/{item.Id}")">
+                                <div class="lk-upcoming">
+                                    <div>
+                                        <strong>@item.OrderNumber</strong>
+                                        <span>@item.CustomerName</span>
+                                    </div>
+                                    <div>
+                                        <small>@TurkeyTime.FormatDate(item.DeliveryDate) · @DisplayNames.Place(item.Place)</small>
+                                        <StatusChip Status="item.Status" />
+                                    </div>
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private DashboardSnapshot? _snapshot;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _snapshot = await DashboardService.GetAsync();
+    }
+}

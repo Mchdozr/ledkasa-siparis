@@ -1,0 +1,47 @@
+@page "/login"
+@layout EmptyLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Giriş — LEDKASA Sipariş</PageTitle>
+
+<div class="auth-card">
+    <div class="auth-hero">
+        <span class="lk-mark lg">LK</span>
+        <h1>LEDKASA Sipariş</h1>
+        <p>Müşteri siparişlerini kaydedin, üretim sürecini izleyin, muhasebe listelerini alın.</p>
+    </div>
+
+    @if (Error == 1)
+    {
+        <div class="lk-alert">Kullanıcı adı veya parola hatalı.</div>
+    }
+    else if (Locked == 1)
+    {
+        <div class="lk-alert">Hesap geçici olarak kilitlendi. 15 dakika sonra deneyin.</div>
+    }
+    else if (Inactive == 1)
+    {
+        <div class="lk-alert">Hesabınız pasif. Yöneticinizle görüşün.</div>
+    }
+
+    <form method="post" action="/account/login" class="auth-form">
+        <AntiforgeryToken />
+        <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+        <label>
+            Kullanıcı adı veya e-posta
+            <input name="login" type="text" required autocomplete="username" />
+        </label>
+        <label>
+            Parola
+            <input name="password" type="password" required autocomplete="current-password" />
+        </label>
+        <button type="submit">Giriş yap</button>
+    </form>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] public int? Error { get; set; }
+    [SupplyParameterFromQuery] public int? Locked { get; set; }
+    [SupplyParameterFromQuery] public int? Inactive { get; set; }
+}

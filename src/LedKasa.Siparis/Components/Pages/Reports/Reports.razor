@@ -1,0 +1,135 @@
+@page "/reports"
+@attribute [Authorize(Policy = Policies.ReportsView)]
+@rendermode InteractiveServer
+@inject IReportService ReportsApi
+@inject NavigationManager Navigation
+
+<PageTitle>Liste raporları — LEDKASA</PageTitle>
+
+<h1 class="lk-page-title">Muhasebe liste raporları</h1>
+<p class="lk-page-sub">Günlük, haftalık, aylık ve yıllık sipariş listesi. Excel veya PDF indirin.</p>
+
+<MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="3">
+            <MudSelect T="ReportPeriod" @bind-Value="_request.Period" Label="Dönem" Variant="Variant.Outlined">
+                <MudSelectItem Value="ReportPeriod.Daily">Günlük</MudSelectItem>
+                <MudSelectItem Value="ReportPeriod.Weekly">Haftalık (Pzt-Paz)</MudSelectItem>
+                <MudSelectItem Value="ReportPeriod.Monthly">Aylık</MudSelectItem>
+                <MudSelectItem Value="ReportPeriod.Yearly">Yıllık</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="ReportDateField" @bind-Value="_request.DateField" Label="Tarih alanı" Variant="Variant.Outlined">
+                <MudSelectItem Value="ReportDateField.OrderDate">Sipariş tarihi</MudSelectItem>
+                <MudSelectItem Value="ReportDateField.DeliveryDate">Teslim tarihi</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudDatePicker Date="_anchor" DateChanged="OnAnchor" Label="Referans tarih" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudSelect T="DeliveryPlace?" @bind-Value="_request.DeliveryPlace" Label="Teslim yeri" Variant="Variant.Outlined" Clearable="true">
+                <MudSelectItem Value="@((DeliveryPlace?)DeliveryPlace.Sirket)">Şirket</MudSelectItem>
+                <MudSelectItem Value="@((DeliveryPlace?)DeliveryPlace.Fabrika)">Fabrika</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudSelect T="OrderStatus?" @bind-Value="_request.Status" Label="Durum" Variant="Variant.Outlined" Clearable="true">
+                @foreach (var status in Enum.GetValues<OrderStatus>())
+                {
+                    <MudSelectItem Value="@((OrderStatus?)status)">@DisplayNames.Status(status)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="5">
+            <MudTextField @bind-Value="_request.CustomerName" Label="Sipariş veren" Variant="Variant.Outlined" />
+        </MudItem>
+        <MudItem xs="12" md="4" Class="d-flex align-center gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadAsync">Raporu getir</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_result is not null)
+{
+    <MudGrid Spacing="2" Class="mb-4">
+        <MudItem xs="6" md="3"><StatCard Title="Sipariş" Value="@_result.OrderCount" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Kalem" Value="@_result.ItemCount" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Toplam adet" Value="@_result.TotalQuantity" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Toplam tutar" Text="@TurkeyTime.FormatMoney(_result.GrandTotal)" /></MudItem>
+    </MudGrid>
+
+    <div class="lk-actions mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="@ExportUrl("xlsx")">Excel indir</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="@ExportUrl("pdf")">PDF indir</MudButton>
+        <MudText Color="Color.Secondary">@_result.Title</MudText>
+    </div>
+
+    <div class="d-none d-md-block">
+        <MudTable Items="_result.Rows" Hover="true" Elevation="0" Class="lk-table" Breakpoint="Breakpoint.None">
+            <HeaderContent>
+                <MudTh>Sipariş</MudTh>
+                <MudTh>Kişi</MudTh>
+                <MudTh>Sipariş</MudTh>
+                <MudTh>Teslim</MudTh>
+                <MudTh>Yer</MudTh>
+                <MudTh>Durum</MudTh>
+                <MudTh>Adet</MudTh>
+                <MudTh>Tutar</MudTh>
+                <MudTh>Ölçüler</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.OrderNumber</MudTd>
+                <MudTd>@context.CustomerName</MudTd>
+                <MudTd>@TurkeyTime.FormatDate(context.OrderDate)</MudTd>
+                <MudTd>@TurkeyTime.FormatDate(context.DeliveryDate)</MudTd>
+                <MudTd>@context.DeliveryPlace</MudTd>
+                <MudTd>@context.Status</MudTd>
+                <MudTd>@context.TotalQuantity</MudTd>
+                <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal)</MudTd>
+                <MudTd>@context.ItemSummary</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </div>
+
+    <div class="d-md-none">
+        @foreach (var row in _result.Rows)
+        {
+            <MudPaper Class="lk-card pa-4 mb-3" Elevation="0">
+                <strong>@row.OrderNumber</strong>
+                <div>@row.CustomerName</div>
+                <small>@row.DeliveryPlace · @row.Status · @TurkeyTime.FormatMoney(row.GrandTotal) · @row.ItemSummary</small>
+            </MudPaper>
+        }
+    </div>
+}
+
+@code {
+    private readonly ReportRequest _request = new() { Anchor = TurkeyTime.Today };
+    private DateTime? _anchor = TurkeyTime.Today.ToDateTime(TimeOnly.MinValue);
+    private ReportResult? _result;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private void OnAnchor(DateTime? value)
+    {
+        _anchor = value;
+        if (value.HasValue)
+            _request.Anchor = DateOnly.FromDateTime(value.Value);
+    }
+
+    private async Task LoadAsync() => _result = await ReportsApi.GetAsync(_request);
+
+    private string ExportUrl(string ext)
+    {
+        var query = $"period={(int)_request.Period}&dateField={(int)_request.DateField}&anchor={_request.Anchor:yyyy-MM-dd}";
+        if (_request.DeliveryPlace.HasValue)
+            query += $"&place={(int)_request.DeliveryPlace.Value}";
+        if (_request.Status.HasValue)
+            query += $"&status={(int)_request.Status.Value}";
+        if (!string.IsNullOrWhiteSpace(_request.CustomerName))
+            query += $"&customer={Uri.EscapeDataString(_request.CustomerName)}";
+        return $"/exports/orders.{ext}?{query}";
+    }
+}

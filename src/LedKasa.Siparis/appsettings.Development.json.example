@@ -1,0 +1,6 @@
+{
+  "Seed": {
+    "AdminEmail": "admin@ledkasa.com.tr",
+    "AdminPassword": "CHANGE_ME_LOCAL_PASSWORD"
+  }
+}

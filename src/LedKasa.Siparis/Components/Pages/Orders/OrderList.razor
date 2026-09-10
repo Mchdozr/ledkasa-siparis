@@ -1,0 +1,142 @@
+@page "/orders"
+@attribute [Authorize(Policy = Policies.OrdersView)]
+@rendermode InteractiveServer
+@inject IOrderService Orders
+@inject NavigationManager Navigation
+
+<PageTitle>Siparişler — LEDKASA</PageTitle>
+
+<div class="lk-toolbar">
+    <div>
+        <h1 class="lk-page-title">Siparişler</h1>
+        <p class="lk-page-sub">Filtreleyin, detaya gidin, süreci ilerletin.</p>
+    </div>
+    <AuthorizeView Policy="@Policies.OrdersCreate">
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="/orders/new"
+                   StartIcon="@Icons.Material.Filled.Add">Yeni sipariş</MudButton>
+    </AuthorizeView>
+</div>
+
+<MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="4">
+            <MudTextField @bind-Value="_filter.Search" Label="Sipariş no / kişi" Variant="Variant.Outlined"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="false" OnKeyDown="OnSearchKey" />
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudSelect T="OrderStatus?" @bind-Value="_filter.Status" Label="Durum" Variant="Variant.Outlined" Clearable="true">
+                @foreach (var status in Enum.GetValues<OrderStatus>())
+                {
+                    <MudSelectItem Value="@((OrderStatus?)status)">@DisplayNames.Status(status)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudSelect T="DeliveryPlace?" @bind-Value="_filter.DeliveryPlace" Label="Teslim yeri" Variant="Variant.Outlined" Clearable="true">
+                <MudSelectItem Value="@((DeliveryPlace?)DeliveryPlace.Sirket)">Şirket</MudSelectItem>
+                <MudSelectItem Value="@((DeliveryPlace?)DeliveryPlace.Fabrika)">Fabrika</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudDatePicker @bind-Date="_from" Label="Başlangıç" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-1" OnClick="SearchAsync">Uygula</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Secondary" />
+}
+else if (_result is { TotalCount: 0 })
+{
+    <MudPaper Class="lk-card pa-8 text-center" Elevation="0">
+        <MudText Typo="Typo.h6">Kayıt bulunamadı</MudText>
+        <MudText Color="Color.Secondary">Filtreleri temizleyin veya yeni sipariş oluşturun.</MudText>
+    </MudPaper>
+}
+else if (_result is not null)
+{
+    <div class="d-none d-md-block">
+        <MudTable Items="_result.Items" Hover="true" Breakpoint="Breakpoint.None" Elevation="0" Class="lk-table">
+            <HeaderContent>
+                <MudTh>Sipariş</MudTh>
+                <MudTh>Kişi</MudTh>
+                <MudTh>Sipariş tarihi</MudTh>
+                <MudTh>Teslim</MudTh>
+                <MudTh>Yer</MudTh>
+                <MudTh>Durum</MudTh>
+                <MudTh>Kalem / Adet</MudTh>
+                <MudTh>Tutar</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudLink Href="@($"/orders/{context.Id}")"><strong>@context.OrderNumber</strong></MudLink>
+                </MudTd>
+                <MudTd>@context.CustomerName</MudTd>
+                <MudTd>@TurkeyTime.FormatDate(context.OrderDate)</MudTd>
+                <MudTd>@TurkeyTime.FormatDate(context.DeliveryDate)</MudTd>
+                <MudTd>@DisplayNames.Place(context.DeliveryPlace)</MudTd>
+                <MudTd><StatusChip Status="context.Status" /></MudTd>
+                <MudTd>@context.ItemCount / @context.TotalQuantity</MudTd>
+                <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal)</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </div>
+
+    <div class="d-md-none">
+        @foreach (var item in _result.Items)
+        {
+            <MudPaper Class="lk-card lk-mobile-card pa-4 mb-3" Elevation="0" @onclick="@(() => Open(item.Id))">
+                <div class="lk-mobile-card__top">
+                    <strong>@item.OrderNumber</strong>
+                    <StatusChip Status="item.Status" />
+                </div>
+                <div>@item.CustomerName</div>
+                <small>@TurkeyTime.FormatDate(item.OrderDate) → @TurkeyTime.FormatDate(item.DeliveryDate) · @DisplayNames.Place(item.DeliveryPlace)</small>
+                <small>@item.ItemCount kalem / @item.TotalQuantity adet · @TurkeyTime.FormatMoney(item.GrandTotal)</small>
+            </MudPaper>
+        }
+    </div>
+
+    <MudPagination Count="@PageCount" Selected="_filter.Page" SelectedChanged="OnPage" Class="mt-4" />
+}
+
+@code {
+    private readonly OrderListFilter _filter = new();
+    private DateTime? _from;
+    private PagedResult<OrderListItemDto>? _result;
+    private bool _loading = true;
+
+    private int PageCount => _result is null || _result.PageSize == 0
+        ? 1
+        : Math.Max(1, (int)Math.Ceiling(_result.TotalCount / (double)_result.PageSize));
+
+    protected override Task OnInitializedAsync() => SearchAsync();
+
+    private async Task OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        _loading = true;
+        _filter.From = _from is null ? null : DateOnly.FromDateTime(_from.Value);
+        _filter.Page = 1;
+        _result = await Orders.ListAsync(_filter);
+        _loading = false;
+    }
+
+    private async Task OnPage(int page)
+    {
+        _filter.Page = page;
+        _result = await Orders.ListAsync(_filter);
+    }
+
+    private void Open(int id) => Navigation.NavigateTo($"/orders/{id}");
+}

@@ -1,0 +1,43 @@
+name: Build and deploy to Plesk
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Test
+        run: dotnet test tests/LedKasa.Siparis.Tests/LedKasa.Siparis.Tests.csproj -c Release --nologo
+
+  publish-plesk:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Publish linux-x64
+        run: >
+          dotnet publish src/LedKasa.Siparis/LedKasa.Siparis.csproj
+          -c Release -r linux-x64 --self-contained true
+          -o artifact /p:UseAppHost=true
+      - name: Push publish output to plesk branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./artifact
+          publish_branch: plesk
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com

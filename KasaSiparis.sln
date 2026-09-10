@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{46ED68BF-CB84-42F0-B2C2-07A68AF9BB47}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LedKasa.Siparis", "src\LedKasa.Siparis\LedKasa.Siparis.csproj", "{1145D92B-55C8-4A1E-AA8F-383DE6630958}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{99ADF4DF-6096-445F-B08B-D4DD9D848D38}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LedKasa.Siparis.Tests", "tests\LedKasa.Siparis.Tests\LedKasa.Siparis.Tests.csproj", "{594A05D5-A137-4652-B829-2754683F34C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1145D92B-55C8-4A1E-AA8F-383DE6630958}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1145D92B-55C8-4A1E-AA8F-383DE6630958}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1145D92B-55C8-4A1E-AA8F-383DE6630958}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1145D92B-55C8-4A1E-AA8F-383DE6630958}.Release|Any CPU.Build.0 = Release|Any CPU
+		{594A05D5-A137-4652-B829-2754683F34C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{594A05D5-A137-4652-B829-2754683F34C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{594A05D5-A137-4652-B829-2754683F34C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{594A05D5-A137-4652-B829-2754683F34C9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1145D92B-55C8-4A1E-AA8F-383DE6630958} = {46ED68BF-CB84-42F0-B2C2-07A68AF9BB47}
+		{594A05D5-A137-4652-B829-2754683F34C9} = {99ADF4DF-6096-445F-B08B-D4DD9D848D38}
+	EndGlobalSection
+EndGlobal

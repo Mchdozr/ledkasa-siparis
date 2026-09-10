@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+@using LedKasa.Siparis.Theming
+
+<MudThemeProvider Theme="LedKasaTheme.Create()" @rendermode="InteractiveServer" />
+<MudPopoverProvider @rendermode="InteractiveServer" />
+<MudDialogProvider @rendermode="InteractiveServer" />
+<MudSnackbarProvider @rendermode="InteractiveServer" />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Class="lk-appbar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       Class="d-lg-none" OnClick="ToggleDrawer" aria-label="Menü" />
+        <div class="lk-brand">
+            <span class="lk-mark">LK</span>
+            <div>
+                <strong>LEDKASA</strong>
+                <small>Sipariş Operasyonu</small>
+            </div>
+        </div>
+        <MudSpacer />
+        <OfflineBanner />
+        <InstallPrompt />
+        <AuthorizeView>
+            <Authorized>
+                <MudText Class="d-none d-sm-block mr-3" Typo="Typo.caption">
+                    @context.User.FindFirst("display_name")?.Value
+                </MudText>
+                <form method="post" action="/account/logout">
+                    <AntiforgeryToken />
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" Color="Color.Inherit">Çıkış</MudButton>
+                </form>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Class="lk-drawer" Breakpoint="Breakpoint.Lg"
+               Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent Class="lk-main">
+        <div class="lk-page">
+            @Body
+        </div>
+        <BottomNav />
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+}
