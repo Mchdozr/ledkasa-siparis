@@ -149,6 +149,30 @@ html, body {
     gap: 10px 16px;
 }
 
+.lk-item-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lk-item-line {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 10px;
+    align-items: baseline;
+    line-height: 1.45;
+}
+
+.lk-item-line span {
+    color: #5b6b7c;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.lk-item-line strong {
+    font-size: 0.98rem;
+}
+
 .lk-table {
     background: white;
     border-radius: 16px;

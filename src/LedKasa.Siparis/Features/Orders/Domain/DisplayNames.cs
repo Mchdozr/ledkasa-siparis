@@ -19,4 +19,12 @@ public static class DisplayNames
         DeliveryPlace.Fabrika => "Fabrika",
         _ => throw new ArgumentOutOfRangeException(nameof(place), place, null)
     };
+
+    public static string Currency(Currency currency) => currency switch
+    {
+        Domain.Currency.Try => "TL",
+        Domain.Currency.Usd => "USD",
+        Domain.Currency.Eur => "EUR",
+        _ => throw new ArgumentOutOfRangeException(nameof(currency), currency, null)
+    };
 }

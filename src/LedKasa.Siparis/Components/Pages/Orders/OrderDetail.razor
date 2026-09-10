@@ -39,30 +39,15 @@ else
                     <span>Sipariş tarihi</span><strong>@TurkeyTime.FormatDate(_order.OrderDate)</strong>
                     <span>Teslim tarihi</span><strong>@TurkeyTime.FormatDate(_order.DeliveryDate)</strong>
                     <span>Durum</span><StatusChip Status="_order.Status" />
-                    <span>Toplam</span><strong>@TurkeyTime.FormatMoney(_order.GrandTotal)</strong>
+                    <span>Para birimi</span><strong>@DisplayNames.Currency(_order.Currency)</strong>
+                    <span>Toplam</span><strong>@TurkeyTime.FormatMoney(_order.GrandTotal, _order.Currency)</strong>
                     <span>Not</span><strong>@(_order.Notes ?? "—")</strong>
                 </div>
             </MudPaper>
 
             @foreach (var item in _order.Items)
             {
-                <MudPaper Class="lk-card pa-4 mb-3" Elevation="0">
-                    <MudText Typo="Typo.subtitle1">@item.WidthCm.ToString("0.##") × @item.HeightCm.ToString("0.##") cm</MudText>
-                    <MudText>@item.Quantity adet · @TurkeyTime.FormatMoney(item.UnitPrice) × @item.Quantity = @TurkeyTime.FormatMoney(item.LineTotal)</MudText>
-                    @if (item.ExtraFeatureNames.Count > 0)
-                    {
-                        <div class="mt-2">
-                            @foreach (var name in item.ExtraFeatureNames)
-                            {
-                                <MudChip T="string" Size="Size.Small">@name</MudChip>
-                            }
-                        </div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(item.Note))
-                    {
-                        <MudText Typo="Typo.caption">@item.Note</MudText>
-                    }
-                </MudPaper>
+                <OrderItemCard Item="item" Currency="_order.Currency" />
             }
         </MudItem>
         <MudItem xs="12" md="4">

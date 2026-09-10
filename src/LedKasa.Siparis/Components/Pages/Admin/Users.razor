@@ -3,11 +3,34 @@
 @rendermode InteractiveServer
 @inject IUserAdminService UsersApi
 @inject ISnackbar Snackbar
+@inject ICurrentUser CurrentUser
 
 <PageTitle>Kullanıcılar — LEDKASA</PageTitle>
 
 <h1 class="lk-page-title">Kullanıcılar</h1>
 <p class="lk-page-sub">Kullanıcı adı ve şifre yeterli. Güçlü parola zorunlu değil.</p>
+
+@if (!string.IsNullOrEmpty(_self.UserId))
+{
+    <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+        <MudText Typo="Typo.h6">Giriş bilgilerim</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">Kendi kullanıcı adı, e-posta ve şifrenizi güncelleyin.</MudText>
+        <MudGrid Spacing="2" Class="mt-1">
+            <MudItem xs="12" md="3">
+                <MudTextField @bind-Value="_self.UserName" Label="Kullanıcı adı" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudTextField @bind-Value="_self.Email" Label="E-posta" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudTextField @bind-Value="_self.Password" Label="Yeni şifre" HelperText="Boş bırakınca değişmez" InputType="InputType.Password" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-1" OnClick="SaveSelfAsync">Kaydet</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
 
 <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
     <MudText Typo="Typo.h6">Yeni kullanıcı</MudText>
@@ -28,6 +51,30 @@
     </MudGrid>
 </MudPaper>
 
+@if (_edit is not null)
+{
+    <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+        <div class="d-flex align-center justify-space-between gap-2 mb-1">
+            <MudText Typo="Typo.h6">Giriş bilgilerini düzenle</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CancelEdit" aria-label="Kapat" />
+        </div>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="3">
+                <MudTextField @bind-Value="_edit.UserName" Label="Kullanıcı adı" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudTextField @bind-Value="_edit.Email" Label="E-posta" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudTextField @bind-Value="_edit.Password" Label="Yeni şifre" HelperText="Boş bırakınca değişmez" InputType="InputType.Password" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-1" OnClick="SaveEditAsync">Kaydet</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+}
+
 <MudTable Items="_users" Elevation="0" Class="lk-table" Hover="true">
     <HeaderContent>
         <MudTh>Kullanıcı</MudTh>
@@ -36,10 +83,17 @@
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd>@context.UserName</MudTd>
+        <MudTd>
+            @context.UserName
+            @if (IsCurrent(context.Id))
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-2">Siz</MudChip>
+            }
+        </MudTd>
         <MudTd>@AppRoles.DisplayName(context.Role)</MudTd>
         <MudTd>@(context.IsActive ? "Aktif" : "Pasif")</MudTd>
         <MudTd>
+            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => BeginEdit(context)">Düzenle</MudButton>
             <MudButton Size="Size.Small" OnClick="() => ToggleAsync(context)">@(context.IsActive ? "Pasifleştir" : "Aktifleştir")</MudButton>
         </MudTd>
     </RowTemplate>
@@ -48,10 +102,57 @@
 @code {
     private IReadOnlyList<UserAdminDto> _users = [];
     private readonly CreateUserRequest _create = new();
+    private readonly UpdateUserCredentialsRequest _self = new();
+    private UpdateUserCredentialsRequest? _edit;
 
     protected override Task OnInitializedAsync() => ReloadAsync();
 
-    private async Task ReloadAsync() => _users = await UsersApi.ListAsync();
+    private async Task ReloadAsync()
+    {
+        _users = await UsersApi.ListAsync();
+        var me = _users.FirstOrDefault(u => IsCurrent(u.Id));
+        if (me is null)
+            return;
+
+        _self.UserId = me.Id;
+        _self.UserName = me.UserName;
+        _self.Email = me.Email;
+        _self.Password = string.Empty;
+    }
+
+    private void BeginEdit(UserAdminDto user)
+    {
+        _edit = new UpdateUserCredentialsRequest
+        {
+            UserId = user.Id,
+            UserName = user.UserName,
+            Email = user.Email,
+            Password = string.Empty
+        };
+    }
+
+    private void CancelEdit() => _edit = null;
+
+    private Task SaveSelfAsync() => SaveCredentialsAsync(_self, closeEdit: false);
+
+    private Task SaveEditAsync() => _edit is null ? Task.CompletedTask : SaveCredentialsAsync(_edit, closeEdit: true);
+
+    private async Task SaveCredentialsAsync(UpdateUserCredentialsRequest request, bool closeEdit)
+    {
+        try
+        {
+            await UsersApi.UpdateCredentialsAsync(request);
+            Snackbar.Add("Giriş bilgileri güncellendi.", Severity.Success);
+            request.Password = string.Empty;
+            if (closeEdit)
+                _edit = null;
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
 
     private async Task CreateAsync()
     {
@@ -72,5 +173,19 @@
     {
         await UsersApi.SetActiveAsync(user.Id, !user.IsActive);
         await ReloadAsync();
+    }
+
+    private bool IsCurrent(string userId)
+    {
+        if (!CurrentUser.IsAuthenticated)
+            return false;
+        try
+        {
+            return string.Equals(CurrentUser.UserId, userId, StringComparison.Ordinal);
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 }

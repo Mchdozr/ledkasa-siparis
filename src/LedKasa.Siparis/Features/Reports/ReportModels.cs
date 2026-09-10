@@ -23,6 +23,7 @@ public sealed class ReportRow
     public int ItemCount { get; init; }
     public int TotalQuantity { get; init; }
     public decimal GrandTotal { get; init; }
+    public Currency Currency { get; init; }
     public string ItemSummary { get; init; } = string.Empty;
 }
 
@@ -35,5 +36,6 @@ public sealed class ReportResult
     public int ItemCount { get; init; }
     public int TotalQuantity { get; init; }
     public decimal GrandTotal { get; init; }
+    public string FormattedGrandTotal { get; init; } = string.Empty;
     public IReadOnlyList<ReportRow> Rows { get; init; } = [];
 }

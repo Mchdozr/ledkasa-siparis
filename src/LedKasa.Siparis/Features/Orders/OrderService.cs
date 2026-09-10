@@ -77,6 +77,7 @@ public sealed class OrderService : IOrderService
                 OrderDate = o.OrderDate,
                 DeliveryDate = o.DeliveryDate,
                 DeliveryPlace = o.DeliveryPlace,
+                Currency = o.Currency,
                 Status = o.Status,
                 ItemCount = o.Items.Count,
                 TotalQuantity = o.Items.Sum(i => i.Quantity),
@@ -119,7 +120,8 @@ public sealed class OrderService : IOrderService
             draft.DeliveryPlace,
             items,
             _currentUser.UserId,
-            draft.Notes);
+            draft.Notes,
+            currency: draft.Currency);
 
         _db.Orders.Add(order);
         AddAudit("OrderCreated", "Order", number, $"Müşteri: {order.CustomerName}");
@@ -139,6 +141,7 @@ public sealed class OrderService : IOrderService
             draft.OrderDate,
             draft.DeliveryDate,
             draft.DeliveryPlace,
+            draft.Currency,
             draft.Notes,
             _currentUser.UserId);
 
@@ -209,6 +212,7 @@ public sealed class OrderService : IOrderService
         OrderDate = order.OrderDate,
         DeliveryDate = order.DeliveryDate,
         DeliveryPlace = order.DeliveryPlace,
+        Currency = order.Currency,
         Status = order.Status,
         Notes = order.Notes,
         CreatedByUserId = order.CreatedByUserId,

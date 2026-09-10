@@ -14,6 +14,10 @@ public sealed class OrderDraftValidator : AbstractValidator<OrderDraft>
             .GreaterThanOrEqualTo(x => x.OrderDate)
             .WithMessage("Teslim tarihi sipariş tarihinden önce olamaz.");
 
+        RuleFor(x => x.Currency)
+            .IsInEnum()
+            .WithMessage("Para birimi geçersiz.");
+
         RuleFor(x => x.Items)
             .NotEmpty().WithMessage("Siparişte en az bir kalem olmalıdır.");
 

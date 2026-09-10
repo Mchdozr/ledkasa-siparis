@@ -11,7 +11,7 @@ Sunucu: Linux Plesk — MariaDB 10.4
 1. `siparis.ledkasa.com.tr` → **Git** (yoksa **Alan Adı Ekle / Git deposu**)
 2. Depo: `https://github.com/Mchdozr/ledkasa-siparis.git`
 3. Dal: **`plesk`** (`main` değil)
-4. Dağıtım dizini: `httpdocs`
+4. Dağıtım dizini: `/siparis.ledkasa.com.tr/httpdocs` (`/httpdocs` ana site, kullanma)
 5. Webhook / otomatik dağıtım açık
 6. Özel repo ise Plesk’e GitHub SSH deploy key veya erişim jetonu ver
 
@@ -21,8 +21,8 @@ Sunucu: Linux Plesk — MariaDB 10.4
 
 | Alan | Değer |
 |---|---|
-| Uygulama kökü | `/httpdocs` |
-| Belge kökü | `/httpdocs/wwwroot` |
+| Uygulama kökü | `/siparis.ledkasa.com.tr/httpdocs` |
+| Belge kökü | `/siparis.ledkasa.com.tr/httpdocs/wwwroot` |
 | Başlatma dosyası | `LedKasa.Siparis.dll` |
 | Etkinleştirildi | işaretle |
 

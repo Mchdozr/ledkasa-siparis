@@ -28,6 +28,8 @@ public class ReportServiceTests
         report.GrandTotal.Should().Be(25);
         report.Rows.Single().CustomerName.Should().Be("İçerde");
         report.Rows.Single().GrandTotal.Should().Be(25);
+        report.Rows.Single().Currency.Should().Be(Currency.Try);
+        report.FormattedGrandTotal.Should().Be("25,00 ₺");
         report.Title.Should().Contain("Haftalık");
     }
 
@@ -48,12 +50,35 @@ public class ReportServiceTests
 
         excel.Should().NotBeEmpty();
         pdf.Should().StartWith("%PDF"u8.ToArray());
+        pdf.Length.Should().BeGreaterThan(1000);
 
         using var book = new XLWorkbook(new MemoryStream(excel));
         var text = book.Worksheet(1).RangeUsed()!.Cells().Select(c => c.GetString()).ToList();
         text.Should().Contain(report.Rows[0].OrderNumber);
         text.Should().Contain("LEDKASA Sipariş Raporu");
         text.Should().Contain("Tutar");
+        text.Should().Contain("25,00 ₺");
+    }
+
+    [Fact]
+    public async Task Excel_ShouldFormatUsdRow()
+    {
+        await using var db = TestDb.Create();
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        var draft = Draft("Usd", new DateOnly(2026, 9, 10));
+        draft.Currency = Currency.Usd;
+        await orders.CreateAsync(draft);
+        var report = await new ReportService(db).GetAsync(new ReportRequest
+        {
+            Period = ReportPeriod.Daily,
+            Anchor = new DateOnly(2026, 9, 10)
+        });
+
+        var excel = new ExcelReportExporter().Export(report);
+        using var book = new XLWorkbook(new MemoryStream(excel));
+        var text = book.Worksheet(1).RangeUsed()!.Cells().Select(c => c.GetString()).ToList();
+        text.Should().Contain("25,00 $");
+        report.FormattedGrandTotal.Should().Be("25,00 $");
     }
 
     private static OrderDraft Draft(string name, DateOnly date) => new()

@@ -22,7 +22,7 @@ public sealed class ExcelReportExporter : IExcelReportExporter
 
         sheet.Cell(2, 1).Value = report.Title;
         sheet.Range(2, 1, 2, 10).Merge();
-        sheet.Cell(3, 1).Value = $"Sipariş: {report.OrderCount}  |  Kalem: {report.ItemCount}  |  Adet: {report.TotalQuantity}  |  Tutar: {TurkeyTime.FormatMoney(report.GrandTotal)}";
+        sheet.Cell(3, 1).Value = $"Sipariş: {report.OrderCount}  |  Kalem: {report.ItemCount}  |  Adet: {report.TotalQuantity}  |  Tutar: {report.FormattedGrandTotal}";
         sheet.Range(3, 1, 3, 10).Merge();
 
         var headers = new[] { "Sipariş No", "Sipariş Veren", "Sipariş Tarihi", "Teslim Tarihi", "Teslim Yeri", "Durum", "Kalem", "Toplam Adet", "Tutar", "Ölçüler" };
@@ -46,7 +46,7 @@ public sealed class ExcelReportExporter : IExcelReportExporter
             sheet.Cell(row, 6).Value = item.Status;
             sheet.Cell(row, 7).Value = item.ItemCount;
             sheet.Cell(row, 8).Value = item.TotalQuantity;
-            sheet.Cell(row, 9).Value = TurkeyTime.FormatMoney(item.GrandTotal);
+            sheet.Cell(row, 9).Value = TurkeyTime.FormatMoney(item.GrandTotal, item.Currency);
             sheet.Cell(row, 10).Value = item.ItemSummary;
             row++;
         }

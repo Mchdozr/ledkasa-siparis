@@ -1,8 +1,12 @@
+using System.Globalization;
+using LedKasa.Siparis.Features.Orders.Domain;
+
 namespace LedKasa.Siparis.Common;
 
 public static class TurkeyTime
 {
     private static readonly TimeZoneInfo Zone = ResolveZone();
+    public static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("tr-TR");
 
     public static DateTimeOffset Now => TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, Zone);
 
@@ -18,8 +22,26 @@ public static class TurkeyTime
 
     public static string FormatDateTime(DateTime utc) => ToTurkey(utc).ToString("dd.MM.yyyy HH:mm");
 
-    public static string FormatMoney(decimal amount) =>
-        amount.ToString("N2", new System.Globalization.CultureInfo("tr-TR")) + " ₺";
+    public static string FormatMoney(decimal amount) => FormatMoney(amount, Currency.Try);
+
+    public static string FormatMoney(decimal amount, Currency currency)
+    {
+        var number = amount.ToString("N2", Culture);
+        var symbol = currency switch
+        {
+            Currency.Try => "₺",
+            Currency.Usd => "$",
+            Currency.Eur => "€",
+            _ => throw new ArgumentOutOfRangeException(nameof(currency), currency, null)
+        };
+        return number + " " + symbol;
+    }
+
+    public static string FormatMoneyLine(decimal unitPrice, int quantity, decimal lineTotal, Currency currency) =>
+        $"{FormatMoney(unitPrice, currency)} × {quantity} = {FormatMoney(lineTotal, currency)}";
+
+    public static string FormatMoneyTotals(IEnumerable<(Currency Currency, decimal Amount)> totals) =>
+        string.Join(" · ", totals.Select(t => FormatMoney(t.Amount, t.Currency)));
 
     private static TimeZoneInfo ResolveZone()
     {

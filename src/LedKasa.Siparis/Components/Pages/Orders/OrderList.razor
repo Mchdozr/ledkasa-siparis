@@ -82,7 +82,7 @@ else if (_result is not null)
                 <MudTd>@DisplayNames.Place(context.DeliveryPlace)</MudTd>
                 <MudTd><StatusChip Status="context.Status" /></MudTd>
                 <MudTd>@context.ItemCount / @context.TotalQuantity</MudTd>
-                <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal)</MudTd>
+                <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal, context.Currency)</MudTd>
             </RowTemplate>
         </MudTable>
     </div>
@@ -97,7 +97,11 @@ else if (_result is not null)
                 </div>
                 <div>@item.CustomerName</div>
                 <small>@TurkeyTime.FormatDate(item.OrderDate) → @TurkeyTime.FormatDate(item.DeliveryDate) · @DisplayNames.Place(item.DeliveryPlace)</small>
-                <small>@item.ItemCount kalem / @item.TotalQuantity adet · @TurkeyTime.FormatMoney(item.GrandTotal)</small>
+                <div class="lk-item-lines mt-2">
+                    <div class="lk-item-line"><span>Kalem</span><strong>@item.ItemCount</strong></div>
+                    <div class="lk-item-line"><span>Adet</span><strong>@item.TotalQuantity</strong></div>
+                    <div class="lk-item-line"><span>Tutar</span><strong>@TurkeyTime.FormatMoney(item.GrandTotal, item.Currency)</strong></div>
+                </div>
             </MudPaper>
         }
     </div>

@@ -23,10 +23,19 @@ public sealed class CreateUserRequest
     public string Role { get; set; } = AppRoles.SiparisPersoneli;
 }
 
+public sealed class UpdateUserCredentialsRequest
+{
+    public string UserId { get; set; } = string.Empty;
+    public string UserName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
 public interface IUserAdminService
 {
     Task<IReadOnlyList<UserAdminDto>> ListAsync(CancellationToken cancellationToken = default);
     Task CreateAsync(CreateUserRequest request, CancellationToken cancellationToken = default);
+    Task UpdateCredentialsAsync(UpdateUserCredentialsRequest request, CancellationToken cancellationToken = default);
     Task SetActiveAsync(string userId, bool isActive, CancellationToken cancellationToken = default);
     Task SetRoleAsync(string userId, string role, CancellationToken cancellationToken = default);
 }
@@ -89,13 +98,36 @@ public sealed class UserAdminService : IUserAdminService
             IsActive = true
         };
 
-        var created = await _users.CreateAsync(user, request.Password);
-        if (!created.Succeeded)
-            throw new DomainException(string.Join(" ", created.Errors.Select(e => e.Description)));
+        ThrowIfFailed(await _users.CreateAsync(user, request.Password));
+        ThrowIfFailed(await _users.AddToRoleAsync(user, request.Role));
+    }
 
-        var roleResult = await _users.AddToRoleAsync(user, request.Role);
-        if (!roleResult.Succeeded)
-            throw new DomainException(string.Join(" ", roleResult.Errors.Select(e => e.Description)));
+    public async Task UpdateCredentialsAsync(UpdateUserCredentialsRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await _users.FindByIdAsync(request.UserId)
+            ?? throw new DomainException("Kullanıcı bulunamadı.");
+
+        var userName = request.UserName?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(userName))
+            throw new DomainException("Kullanıcı adı zorunludur.");
+
+        if (!string.Equals(user.UserName, userName, StringComparison.Ordinal))
+            ThrowIfFailed(await _users.SetUserNameAsync(user, userName));
+
+        var email = ResolveEmail(userName, request.Email, user.Email);
+        if (!string.Equals(user.Email, email, StringComparison.Ordinal))
+        {
+            ThrowIfFailed(await _users.SetEmailAsync(user, email));
+            user.EmailConfirmed = email is not null;
+            ThrowIfFailed(await _users.UpdateAsync(user));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+            return;
+
+        if (await _users.HasPasswordAsync(user))
+            ThrowIfFailed(await _users.RemovePasswordAsync(user));
+        ThrowIfFailed(await _users.AddPasswordAsync(user, request.Password));
     }
 
     public async Task SetActiveAsync(string userId, bool isActive, CancellationToken cancellationToken = default)
@@ -128,4 +160,30 @@ public sealed class UserAdminService : IUserAdminService
             return first.Trim();
         return string.IsNullOrWhiteSpace(second) ? string.Empty : second.Trim();
     }
+
+    private static string? ResolveEmail(string userName, string requestedEmail, string? currentEmail)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedEmail))
+            return requestedEmail.Trim();
+        if (userName.Contains('@'))
+            return userName;
+        return string.IsNullOrWhiteSpace(currentEmail) ? null : currentEmail;
+    }
+
+    private static void ThrowIfFailed(IdentityResult result)
+    {
+        if (result.Succeeded)
+            return;
+        throw new DomainException(string.Join(" ", result.Errors.Select(DescribeIdentityError)));
+    }
+
+    private static string DescribeIdentityError(IdentityError error) => error.Code switch
+    {
+        "DuplicateUserName" => "Bu kullanıcı adı zaten kullanılıyor.",
+        "DuplicateEmail" => "Bu e-posta zaten kullanılıyor.",
+        "InvalidUserName" => "Geçersiz kullanıcı adı.",
+        "InvalidEmail" => "Geçersiz e-posta.",
+        "PasswordTooShort" => "Şifre çok kısa.",
+        _ => error.Description
+    };
 }

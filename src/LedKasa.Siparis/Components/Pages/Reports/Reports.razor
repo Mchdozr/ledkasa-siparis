@@ -57,7 +57,7 @@
         <MudItem xs="6" md="3"><StatCard Title="Sipariş" Value="@_result.OrderCount" /></MudItem>
         <MudItem xs="6" md="3"><StatCard Title="Kalem" Value="@_result.ItemCount" /></MudItem>
         <MudItem xs="6" md="3"><StatCard Title="Toplam adet" Value="@_result.TotalQuantity" /></MudItem>
-        <MudItem xs="6" md="3"><StatCard Title="Toplam tutar" Text="@TurkeyTime.FormatMoney(_result.GrandTotal)" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Toplam tutar" Text="@_result.FormattedGrandTotal" /></MudItem>
     </MudGrid>
 
     <div class="lk-actions mb-4">
@@ -87,7 +87,7 @@
                 <MudTd>@context.DeliveryPlace</MudTd>
                 <MudTd>@context.Status</MudTd>
                 <MudTd>@context.TotalQuantity</MudTd>
-                <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal)</MudTd>
+                <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal, context.Currency)</MudTd>
                 <MudTd>@context.ItemSummary</MudTd>
             </RowTemplate>
         </MudTable>
@@ -99,7 +99,7 @@
             <MudPaper Class="lk-card pa-4 mb-3" Elevation="0">
                 <strong>@row.OrderNumber</strong>
                 <div>@row.CustomerName</div>
-                <small>@row.DeliveryPlace · @row.Status · @TurkeyTime.FormatMoney(row.GrandTotal) · @row.ItemSummary</small>
+                <small>@row.DeliveryPlace · @row.Status · @TurkeyTime.FormatMoney(row.GrandTotal, row.Currency) · @row.ItemSummary</small>
             </MudPaper>
         }
     </div>

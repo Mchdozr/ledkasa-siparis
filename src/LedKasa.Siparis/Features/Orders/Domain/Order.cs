@@ -11,6 +11,7 @@ public sealed class Order
     public DateOnly OrderDate { get; private set; }
     public DateOnly DeliveryDate { get; private set; }
     public DeliveryPlace DeliveryPlace { get; private set; }
+    public Currency Currency { get; private set; } = Currency.Try;
     public OrderStatus Status => _status;
     public string? Notes { get; private set; }
     public string CreatedByUserId { get; private set; } = string.Empty;
@@ -34,7 +35,8 @@ public sealed class Order
         IEnumerable<OrderItem> items,
         string createdByUserId,
         string? notes = null,
-        DateTime? nowUtc = null)
+        DateTime? nowUtc = null,
+        Currency currency = Currency.Try)
     {
         if (string.IsNullOrWhiteSpace(orderNumber))
             throw new DomainException("Sipariş numarası zorunludur.");
@@ -44,6 +46,8 @@ public sealed class Order
             throw new DomainException("Oluşturan kullanıcı zorunludur.");
         if (!Enum.IsDefined(deliveryPlace))
             throw new DomainException("Teslim yeri geçersiz.");
+        if (!Enum.IsDefined(currency))
+            throw new DomainException("Para birimi geçersiz.");
         if (deliveryDate < orderDate)
             throw new DomainException("Teslim tarihi sipariş tarihinden önce olamaz.");
 
@@ -58,6 +62,7 @@ public sealed class Order
             OrderDate = orderDate,
             DeliveryDate = deliveryDate,
             DeliveryPlace = deliveryPlace,
+            Currency = currency,
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
             CreatedByUserId = createdByUserId,
             CreatedAtUtc = nowUtc ?? DateTime.UtcNow
@@ -72,6 +77,7 @@ public sealed class Order
         DateOnly orderDate,
         DateOnly deliveryDate,
         DeliveryPlace deliveryPlace,
+        Currency currency,
         string? notes,
         string updatedByUserId,
         DateTime? nowUtc = null)
@@ -81,6 +87,8 @@ public sealed class Order
             throw new DomainException("Sipariş veren kişi zorunludur.");
         if (!Enum.IsDefined(deliveryPlace))
             throw new DomainException("Teslim yeri geçersiz.");
+        if (!Enum.IsDefined(currency))
+            throw new DomainException("Para birimi geçersiz.");
         if (deliveryDate < orderDate)
             throw new DomainException("Teslim tarihi sipariş tarihinden önce olamaz.");
         if (string.IsNullOrWhiteSpace(updatedByUserId))
@@ -90,6 +98,7 @@ public sealed class Order
         OrderDate = orderDate;
         DeliveryDate = deliveryDate;
         DeliveryPlace = deliveryPlace;
+        Currency = currency;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         Touch(updatedByUserId, nowUtc);
     }
