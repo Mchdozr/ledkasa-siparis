@@ -84,6 +84,13 @@ builder.Services.AddHttpClient<ITelegramNotifier, TelegramNotifier>(client =>
     client.BaseAddress = new Uri("https://api.telegram.org/");
     client.Timeout = TimeSpan.FromSeconds(8);
 });
+builder.Services.AddHttpClient("telegram-bot", client =>
+{
+    client.BaseAddress = new Uri("https://api.telegram.org/");
+    client.Timeout = TimeSpan.FromSeconds(35);
+});
+if (!builder.Environment.IsEnvironment("Testing"))
+    builder.Services.AddHostedService<TelegramPollingService>();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IReportService, ReportService>();
