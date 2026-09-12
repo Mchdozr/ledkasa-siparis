@@ -10,13 +10,13 @@ public static class TelegramMessageFormatter
     {
         var text = new StringBuilder();
         text.AppendLine("<b>Yeni sipariş</b>");
-        text.AppendLine($"📦 {Bold(order.OrderNumber)}");
-        text.AppendLine($"👤 {Esc(order.CustomerName)}");
-        text.AppendLine($"📅 Sipariş: {TurkeyTime.FormatDate(order.OrderDate)}");
-        text.AppendLine($"🚚 Teslim: {TurkeyTime.FormatDate(order.DeliveryDate)} · {Esc(DisplayNames.Place(order.Place))}");
-        text.AppendLine($"📍 {Esc(order.DeliveryAddress)}");
+        text.AppendLine($"📦 Sipariş no: {Bold(order.OrderNumber)}");
+        text.AppendLine($"👤 Sipariş veren kişi: {Esc(order.CustomerName)}");
+        text.AppendLine($"📅 Sipariş tarihi: {TurkeyTime.FormatDate(order.OrderDate)}");
+        text.AppendLine($"🚚 Teslim tarihi: {TurkeyTime.FormatDate(order.DeliveryDate)} · Teslim yeri: {Esc(DisplayNames.Place(order.Place))}");
+        text.AppendLine($"📍 Teslimat adresi: {Esc(order.DeliveryAddress)}");
         if (!string.IsNullOrWhiteSpace(order.Notes))
-            text.AppendLine($"📝 {Esc(order.Notes)}");
+            text.AppendLine($"📝 Not: {Esc(order.Notes)}");
 
         text.AppendLine();
         text.AppendLine("<b>Kalemler</b>");
@@ -27,13 +27,11 @@ public static class TelegramMessageFormatter
                 text.AppendLine($"  + {Esc(string.Join(", ", line.Extras))}");
             if (!string.IsNullOrWhiteSpace(line.Note))
                 text.AppendLine($"  not: {Esc(line.Note)}");
-            text.AppendLine($"  {Esc(TurkeyTime.FormatMoney(line.LineTotal, order.Currency))}");
         }
 
         text.AppendLine();
-        text.AppendLine($"💰 Toplam: {Bold(TurkeyTime.FormatMoney(order.GrandTotal, order.Currency))}");
         if (!string.IsNullOrWhiteSpace(order.CreatedBy))
-            text.AppendLine($"✍️ {Esc(order.CreatedBy)}");
+            text.AppendLine($"✍️ Oluşturan: {Esc(order.CreatedBy)}");
 
         var link = BuildOrderUrl(appUrl, order.Id);
         if (!string.IsNullOrWhiteSpace(link))
