@@ -33,10 +33,10 @@ else
                 {
                     @foreach (var item in _snapshot.StatusCounts.OrderBy(s => s.Status))
                     {
-                        <div class="lk-status-row">
+                        <a href="@($"/orders?status={(int)item.Status}")" class="lk-status-row lk-status-row--link">
                             <StatusChip Status="item.Status" />
                             <strong>@item.Count</strong>
-                        </div>
+                        </a>
                     }
                 }
             </MudPaper>
