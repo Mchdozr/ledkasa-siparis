@@ -34,11 +34,13 @@
                 <MudSelectItem Value="@((DeliveryPlace?)DeliveryPlace.Fabrika)">Fabrika</MudSelectItem>
             </MudSelect>
         </MudItem>
-        <MudItem xs="6" md="3">
-            <MudSelect T="OrderStatus?" @bind-Value="_request.Status" Label="Durum" Variant="Variant.Outlined" Clearable="true">
+        <MudItem xs="12" md="6">
+            <MudSelect T="OrderStatus" MultiSelection="true" @bind-SelectedValues="_statuses"
+                       Label="Durum" Variant="Variant.Outlined"
+                       MultiSelectionTextFunc="GetStatusText">
                 @foreach (var status in Enum.GetValues<OrderStatus>())
                 {
-                    <MudSelectItem Value="@((OrderStatus?)status)">@DisplayNames.Status(status)</MudSelectItem>
+                    <MudSelectItem T="OrderStatus" Value="@status">@DisplayNames.Status(status)</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
@@ -107,6 +109,7 @@
 
 @code {
     private readonly ReportRequest _request = new() { Anchor = TurkeyTime.Today };
+    private IEnumerable<OrderStatus> _statuses = Enum.GetValues<OrderStatus>().Where(s => s != OrderStatus.Iptal).ToHashSet();
     private DateTime? _anchor = TurkeyTime.Today.ToDateTime(TimeOnly.MinValue);
     private ReportResult? _result;
 
@@ -119,15 +122,22 @@
             _request.Anchor = DateOnly.FromDateTime(value.Value);
     }
 
-    private async Task LoadAsync() => _result = await ReportsApi.GetAsync(_request);
+    private async Task LoadAsync()
+    {
+        _request.Statuses = _statuses.ToList();
+        _result = await ReportsApi.GetAsync(_request);
+    }
+
+    private static string GetStatusText(List<string> selected)
+        => selected.Count == 0 ? "İptal hariç" : string.Join(", ", selected);
 
     private string ExportUrl(string ext)
     {
         var query = $"period={(int)_request.Period}&dateField={(int)_request.DateField}&anchor={_request.Anchor:yyyy-MM-dd}";
         if (_request.DeliveryPlace.HasValue)
             query += $"&place={(int)_request.DeliveryPlace.Value}";
-        if (_request.Status.HasValue)
-            query += $"&status={(int)_request.Status.Value}";
+        foreach (var status in _statuses)
+            query += $"&status={(int)status}";
         if (!string.IsNullOrWhiteSpace(_request.CustomerName))
             query += $"&customer={Uri.EscapeDataString(_request.CustomerName)}";
         return $"/exports/orders.{ext}?{query}";

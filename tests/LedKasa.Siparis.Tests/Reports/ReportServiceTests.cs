@@ -34,6 +34,70 @@ public class ReportServiceTests
     }
 
     [Fact]
+    public async Task Report_ShouldExcludeCancelledFromRevenue()
+    {
+        await using var db = TestDb.Create();
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        await orders.CreateAsync(Draft("Aktif", new DateOnly(2026, 9, 10)));
+        var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
+        var cancelled = await orders.GetAsync(cancelledId);
+        await orders.ChangeStatusAsync(cancelledId, OrderStatus.Iptal, cancelled!.RowVersion);
+
+        var report = await new ReportService(db).GetAsync(new ReportRequest
+        {
+            Period = ReportPeriod.Daily,
+            Anchor = new DateOnly(2026, 9, 10)
+        });
+
+        report.OrderCount.Should().Be(1);
+        report.GrandTotal.Should().Be(25);
+        report.Rows.Should().ContainSingle(r => r.CustomerName == "Aktif");
+        report.Rows.Should().NotContain(r => r.CustomerName == "İptal");
+        report.FormattedGrandTotal.Should().Be("25,00 TL");
+    }
+
+    [Fact]
+    public async Task Report_ShouldListCancelled_WhenFiltered()
+    {
+        await using var db = TestDb.Create();
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
+        var cancelled = await orders.GetAsync(cancelledId);
+        await orders.ChangeStatusAsync(cancelledId, OrderStatus.Iptal, cancelled!.RowVersion);
+
+        var report = await new ReportService(db).GetAsync(new ReportRequest
+        {
+            Period = ReportPeriod.Daily,
+            Anchor = new DateOnly(2026, 9, 10),
+            Statuses = [OrderStatus.Iptal]
+        });
+
+        report.Rows.Should().ContainSingle(r => r.CustomerName == "İptal");
+    }
+
+    [Fact]
+    public async Task Report_ShouldIncludeCancelled_WhenSelectedWithOthers()
+    {
+        await using var db = TestDb.Create();
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        await orders.CreateAsync(Draft("Aktif", new DateOnly(2026, 9, 10)));
+        var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
+        var cancelled = await orders.GetAsync(cancelledId);
+        await orders.ChangeStatusAsync(cancelledId, OrderStatus.Iptal, cancelled!.RowVersion);
+
+        var report = await new ReportService(db).GetAsync(new ReportRequest
+        {
+            Period = ReportPeriod.Daily,
+            Anchor = new DateOnly(2026, 9, 10),
+            Statuses = [OrderStatus.Yeni, OrderStatus.Iptal]
+        });
+
+        report.OrderCount.Should().Be(2);
+        report.GrandTotal.Should().Be(50);
+        report.Rows.Select(r => r.CustomerName).Should().BeEquivalentTo(["Aktif", "İptal"]);
+    }
+
+    [Fact]
     public async Task ExcelAndPdf_ShouldContainOrderNumber()
     {
         await using var db = TestDb.Create();

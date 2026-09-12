@@ -8,7 +8,7 @@ public sealed class ReportRequest
     public ReportDateField DateField { get; set; } = ReportDateField.OrderDate;
     public DateOnly Anchor { get; set; }
     public DeliveryPlace? DeliveryPlace { get; set; }
-    public OrderStatus? Status { get; set; }
+    public ICollection<OrderStatus> Statuses { get; set; } = [];
     public string? CustomerName { get; set; }
 }
 

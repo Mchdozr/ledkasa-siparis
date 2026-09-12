@@ -34,8 +34,13 @@ public sealed class ReportService : IReportService
         if (request.DeliveryPlace.HasValue)
             query = query.Where(o => o.DeliveryPlace == request.DeliveryPlace.Value);
 
-        if (request.Status.HasValue)
-            query = query.Where(o => o.Status == request.Status.Value);
+        var statuses = (request.Statuses ?? [])
+            .Where(Enum.IsDefined)
+            .Distinct()
+            .ToArray();
+        query = statuses.Length == 0
+            ? query.Where(o => o.Status != OrderStatus.Iptal)
+            : query.Where(o => statuses.Contains(o.Status));
 
         if (!string.IsNullOrWhiteSpace(request.CustomerName))
         {

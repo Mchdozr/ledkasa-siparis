@@ -172,7 +172,7 @@ static async Task<IResult> ExportExcelAsync(
     ReportDateField dateField = ReportDateField.OrderDate,
     DateOnly? anchor = null,
     DeliveryPlace? place = null,
-    OrderStatus? status = null,
+    OrderStatus[]? status = null,
     string? customer = null)
 {
     var result = await reports.GetAsync(new ReportRequest
@@ -181,7 +181,7 @@ static async Task<IResult> ExportExcelAsync(
         DateField = dateField,
         Anchor = anchor ?? LedKasa.Siparis.Common.TurkeyTime.Today,
         DeliveryPlace = place,
-        Status = status,
+        Statuses = status ?? [],
         CustomerName = customer
     });
     var bytes = exporter.Export(result);
@@ -196,7 +196,7 @@ static async Task<IResult> ExportPdfAsync(
     ReportDateField dateField = ReportDateField.OrderDate,
     DateOnly? anchor = null,
     DeliveryPlace? place = null,
-    OrderStatus? status = null,
+    OrderStatus[]? status = null,
     string? customer = null)
 {
     var result = await reports.GetAsync(new ReportRequest
@@ -205,7 +205,7 @@ static async Task<IResult> ExportPdfAsync(
         DateField = dateField,
         Anchor = anchor ?? LedKasa.Siparis.Common.TurkeyTime.Today,
         DeliveryPlace = place,
-        Status = status,
+        Statuses = status ?? [],
         CustomerName = customer
     });
     var bytes = exporter.Export(result);
