@@ -8,6 +8,7 @@ namespace LedKasa.Siparis.Features.Orders;
 public static class DemoOrderSeeder
 {
     public const int DemoOrderCount = 27;
+    public const string DemoNumberPrefix = "LK-DEMO-";
 
     public static async Task SeedAsync(IServiceProvider services, ILogger logger)
     {
@@ -20,9 +21,6 @@ public static class DemoOrderSeeder
 
     public static async Task<int> SeedAsync(ApplicationDbContext db, DateOnly today)
     {
-        if (await db.Orders.AnyAsync())
-            return 0;
-
         var userId = await db.Users.AsNoTracking()
             .Where(u => u.IsActive)
             .OrderBy(u => u.Id)
@@ -32,14 +30,21 @@ public static class DemoOrderSeeder
         if (string.IsNullOrWhiteSpace(userId))
             return 0;
 
-        var sequences = new Dictionary<DateOnly, int>();
-        var orders = Specs.Select(spec =>
+        var existing = await db.Orders.AsNoTracking()
+            .Where(o => o.OrderNumber.StartsWith(DemoNumberPrefix))
+            .Select(o => o.OrderNumber)
+            .ToListAsync();
+
+        var orders = Specs.Select((spec, index) =>
         {
+            var number = $"{DemoNumberPrefix}{(index + 1):0000}";
+            if (existing.Contains(number))
+                return null;
+
             var orderDate = today.AddDays(spec.OrderOffset);
             var deliveryDate = orderDate.AddDays(spec.LeadDays);
-            sequences[orderDate] = sequences.GetValueOrDefault(orderDate) + 1;
             var order = Order.Create(
-                OrderNumberFormatter.Format(orderDate, sequences[orderDate]),
+                number,
                 spec.Customer,
                 orderDate,
                 deliveryDate,
@@ -50,7 +55,10 @@ public static class DemoOrderSeeder
                 currency: spec.Currency);
             ApplyStatus(order, spec.Status, userId);
             return order;
-        }).ToList();
+        }).Where(o => o is not null).Cast<Order>().ToList();
+
+        if (orders.Count == 0)
+            return 0;
 
         db.Orders.AddRange(orders);
         await db.SaveChangesAsync();
