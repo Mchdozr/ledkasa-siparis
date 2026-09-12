@@ -33,8 +33,9 @@
         </AuthorizeView>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Class="lk-drawer" Breakpoint="Breakpoint.Lg"
-               Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Class="lk-drawer" Breakpoint="Breakpoint.Lg"
+               Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Never"
+               OverlayAutoClose="true">
         <NavMenu />
     </MudDrawer>
 
@@ -47,7 +48,7 @@
 </MudLayout>
 
 @code {
-    private bool _drawerOpen = true;
+    private bool _drawerOpen;
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 }
