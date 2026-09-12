@@ -10,6 +10,7 @@ using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Features.Reports;
 using LedKasa.Siparis.Identity;
 using LedKasa.Siparis.Security;
+using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.Configure<CircuitOptions>(options =>
+{
+    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+});
 
 builder.Services.AddMudServices();
 builder.Services.AddHttpContextAccessor();

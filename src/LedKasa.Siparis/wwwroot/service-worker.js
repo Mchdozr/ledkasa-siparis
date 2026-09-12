@@ -1,4 +1,4 @@
-const CACHE = "ledkasa-siparis-v1";
+const CACHE = "ledkasa-siparis-v2";
 const PRECACHE = ["/offline.html", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", event => {
@@ -10,7 +10,6 @@ self.addEventListener("activate", event => {
     event.waitUntil(
         caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
     );
-    self.clients.claim();
 });
 
 self.addEventListener("fetch", event => {
@@ -19,13 +18,13 @@ self.addEventListener("fetch", event => {
 
     const url = new URL(request.url);
     if (url.origin !== self.location.origin) return;
+    if (url.pathname.startsWith("/_blazor") || url.pathname.startsWith("/_framework"))
+        return;
 
     const isStatic = url.pathname.startsWith("/css/")
         || url.pathname.startsWith("/js/")
         || url.pathname.startsWith("/icons/")
-        || url.pathname.startsWith("/_content/")
         || url.pathname.endsWith(".css")
-        || url.pathname.endsWith(".js")
         || url.pathname.endsWith(".png")
         || url.pathname.endsWith(".webmanifest");
 

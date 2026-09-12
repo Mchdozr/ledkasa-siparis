@@ -1,0 +1,45 @@
+@inject NavigationManager Navigation
+
+<div class="lk-toolbar">
+    <div class="lk-page-head">
+        @if (!string.IsNullOrWhiteSpace(BackHref))
+        {
+            <button type="button" class="lk-back" @onclick="GoBack" aria-label="Geri">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowBack" />
+            </button>
+        }
+        <div>
+            @if (!string.IsNullOrWhiteSpace(Parent))
+            {
+                <nav class="lk-crumb" aria-label="Sayfa yolu">
+                    <a href="@BackHref">@Parent</a>
+                    <span aria-hidden="true">/</span>
+                    <strong>@Title</strong>
+                </nav>
+            }
+            else
+            {
+                <h1 class="lk-page-title">@Title</h1>
+            }
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <p class="lk-page-sub">@Subtitle</p>
+            }
+        </div>
+    </div>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Parent { get; set; }
+    [Parameter] public string? BackHref { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private void GoBack()
+    {
+        if (!string.IsNullOrWhiteSpace(BackHref))
+            Navigation.NavigateTo(BackHref);
+    }
+}

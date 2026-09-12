@@ -11,8 +11,10 @@
 
 <PageTitle>@(Id is null ? "Yeni sipariş" : "Sipariş düzenle") — LEDKASA</PageTitle>
 
-<h1 class="lk-page-title">@(Id is null ? "Yeni sipariş" : "Siparişi düzenle")</h1>
-<p class="lk-page-sub">Ürün, ölçü, ekstra özellik ve teslim bilgileri.</p>
+<PageHeader Title="@(Id is null ? "Yeni sipariş" : "Siparişi düzenle")"
+            Parent="@(Id is null ? "Siparişler" : "Sipariş")"
+            BackHref="@(Id is null ? "/orders" : $"/orders/{Id}")"
+            Subtitle="Ürün, ölçü, ekstra özellik ve teslim bilgileri." />
 
 <EditForm Model="_draft" OnValidSubmit="SaveAsync">
     <DataAnnotationsValidator />
