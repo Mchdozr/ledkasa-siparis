@@ -36,6 +36,29 @@ public class OrderServiceTests
     }
 
     [Fact]
+    public async Task Create_ShouldNotifyTelegram()
+    {
+        await using var db = TestDb.Create();
+        var telegram = new RecordingTelegramNotifier();
+        var service = new OrderService(
+            db,
+            new TestCurrentUser { DisplayName = "Admin" },
+            new OrderDraftValidator(),
+            telegram);
+
+        var id = await service.CreateAsync(Draft("Ayşe Kaya"));
+
+        telegram.CallCount.Should().Be(1);
+        telegram.Last.Should().NotBeNull();
+        telegram.Last!.Id.Should().Be(id);
+        telegram.Last.CustomerName.Should().Be("Ayşe Kaya");
+        telegram.Last.CreatedBy.Should().Be("Admin");
+        telegram.Last.Lines.Should().ContainSingle();
+        telegram.Last.Lines[0].ProductName.Should().Be("Rental LED Kabinet");
+        telegram.Last.Lines[0].Extras.Should().Contain("Köşe kesim");
+    }
+
+    [Fact]
     public async Task Create_ShouldReject_InvalidDates()
     {
         await using var db = TestDb.Create();
@@ -202,7 +225,7 @@ public class OrderServiceTests
         LedKasa.Siparis.Data.ApplicationDbContext db,
         bool canViewPrices = true,
         bool canCreateOrders = true)
-        => new(db, new TestCurrentUser { CanViewPrices = canViewPrices, CanCreateOrders = canCreateOrders }, new OrderDraftValidator());
+        => new(db, new TestCurrentUser { CanViewPrices = canViewPrices, CanCreateOrders = canCreateOrders }, new OrderDraftValidator(), new NullTelegramNotifier());
 
     private static OrderDraft Draft(string name, DateOnly? orderDate = null, DateOnly? deliveryDate = null) => new()
     {

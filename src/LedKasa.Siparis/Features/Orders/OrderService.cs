@@ -2,6 +2,7 @@ using FluentValidation;
 using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Audit;
+using LedKasa.Siparis.Features.Notifications;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Security;
 using Microsoft.EntityFrameworkCore;
@@ -22,12 +23,18 @@ public sealed class OrderService : IOrderService
     private readonly ApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
     private readonly IValidator<OrderDraft> _validator;
+    private readonly ITelegramNotifier _telegram;
 
-    public OrderService(ApplicationDbContext db, ICurrentUser currentUser, IValidator<OrderDraft> validator)
+    public OrderService(
+        ApplicationDbContext db,
+        ICurrentUser currentUser,
+        IValidator<OrderDraft> validator,
+        ITelegramNotifier telegram)
     {
         _db = db;
         _currentUser = currentUser;
         _validator = validator;
+        _telegram = telegram;
     }
 
     public async Task<PagedResult<OrderListItemDto>> ListAsync(OrderListFilter filter, CancellationToken cancellationToken = default)
@@ -139,6 +146,7 @@ public sealed class OrderService : IOrderService
         _db.Orders.Add(order);
         AddAudit("OrderCreated", "Order", number, $"Müşteri: {order.CustomerName}");
         await _db.SaveChangesAsync(cancellationToken);
+        await NotifyCreatedAsync(order, cancellationToken);
         return order.Id;
     }
 
@@ -185,6 +193,50 @@ public sealed class OrderService : IOrderService
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
         return order ?? throw new DomainException("Sipariş bulunamadı.");
+    }
+
+    private async Task NotifyCreatedAsync(Order order, CancellationToken cancellationToken)
+    {
+        var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
+        var extraIds = order.Items.SelectMany(i => i.ExtraFeatures.Select(f => f.ExtraFeatureId)).Distinct().ToList();
+
+        var products = await _db.Products.AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
+        var extras = extraIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await _db.ExtraFeatures.AsNoTracking()
+                .Where(f => extraIds.Contains(f.Id))
+                .ToDictionaryAsync(f => f.Id, f => f.Name, cancellationToken);
+
+        var notice = new TelegramOrderNotice(
+            order.Id,
+            order.OrderNumber,
+            order.CustomerName,
+            order.OrderDate,
+            order.DeliveryDate,
+            order.DeliveryPlace,
+            order.DeliveryAddress,
+            order.Notes,
+            order.Currency,
+            order.GrandTotal,
+            _currentUser.DisplayName ?? _currentUser.UserName,
+            order.Items.Select(item => new TelegramOrderLine(
+                products.GetValueOrDefault(item.ProductId, $"Ürün #{item.ProductId}"),
+                item.WidthCm,
+                item.HeightCm,
+                item.Quantity,
+                item.UnitPrice,
+                item.LineTotal,
+                item.Note,
+                item.ExtraFeatures
+                    .Select(f => extras.GetValueOrDefault(f.ExtraFeatureId))
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Cast<string>()
+                    .ToList()
+            )).ToList());
+
+        await _telegram.NotifyOrderCreatedAsync(notice, cancellationToken);
     }
 
     private async Task<string> NextNumberAsync(DateOnly orderDate, CancellationToken cancellationToken)
