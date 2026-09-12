@@ -22,7 +22,10 @@ public sealed class ReportService : IReportService
     public async Task<ReportResult> GetAsync(ReportRequest request, CancellationToken cancellationToken = default)
     {
         var (from, to) = ReportPeriodCalculator.GetRange(request.Period, request.Anchor);
-        var query = _db.Orders.AsNoTracking().Include(o => o.Items).AsQueryable();
+        var query = _db.Orders.AsNoTracking()
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+            .AsQueryable();
 
         query = request.DateField == ReportDateField.DeliveryDate
             ? query.Where(o => o.DeliveryDate >= from && o.DeliveryDate <= to)
@@ -57,7 +60,8 @@ public sealed class ReportService : IReportService
             TotalQuantity = o.Items.Sum(i => i.Quantity),
             GrandTotal = o.GrandTotal,
             Currency = o.Currency,
-            ItemSummary = string.Join(" · ", o.Items.Select(i => $"{i.WidthCm:0.##}x{i.HeightCm:0.##} cm x{i.Quantity}"))
+            ItemSummary = string.Join(" · ", o.Items.Select(i =>
+                $"{i.Product?.Name ?? "Ürün"} {i.WidthCm:0.##}x{i.HeightCm:0.##} cm x{i.Quantity}"))
         }).ToList();
 
         var totals = rows

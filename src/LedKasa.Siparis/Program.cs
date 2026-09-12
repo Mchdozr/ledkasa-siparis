@@ -82,6 +82,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IExtraFeatureService, ExtraFeatureService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IUserAdminService, UserAdminService>();
 builder.Services.AddSingleton<IExcelReportExporter, ExcelReportExporter>();
 builder.Services.AddSingleton<IPdfReportExporter, PdfReportExporter>();
@@ -128,6 +129,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await db.Database.MigrateAsync();
     await IdentitySeeder.SeedAsync(app.Services, app.Configuration, app.Logger);
+    await DemoOrderSeeder.SeedAsync(app.Services, app.Logger);
 }
 
 app.Run();

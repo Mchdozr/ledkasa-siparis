@@ -1,6 +1,10 @@
 <MudPaper Class="lk-card pa-4 mb-3" Elevation="0">
     <div class="lk-item-lines">
         <div class="lk-item-line">
+            <span>Ürün</span>
+            <strong>@(string.IsNullOrWhiteSpace(Item.ProductName) ? "Ürün" : Item.ProductName)</strong>
+        </div>
+        <div class="lk-item-line">
             <span>Ölçü</span>
             <strong>@Item.WidthCm.ToString("0.##", TurkeyTime.Culture) × @Item.HeightCm.ToString("0.##", TurkeyTime.Culture) cm</strong>
         </div>

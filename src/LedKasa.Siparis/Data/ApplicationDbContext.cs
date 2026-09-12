@@ -15,6 +15,7 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Product> Products => Set<Product>();
     public DbSet<ExtraFeature> ExtraFeatures => Set<ExtraFeature>();
     public DbSet<OrderItemExtraFeature> OrderItemExtraFeatures => Set<OrderItemExtraFeature>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

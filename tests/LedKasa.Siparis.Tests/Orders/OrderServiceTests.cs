@@ -87,6 +87,7 @@ public class OrderServiceTests
         [
             new OrderItemInput
             {
+                ProductId = 3,
                 WidthCm = 96,
                 HeightCm = 96,
                 Quantity = 4,

@@ -99,6 +99,8 @@ public sealed class OrderService : IOrderService
         var order = await _db.Orders
             .AsNoTracking()
             .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+            .Include(o => o.Items)
                 .ThenInclude(i => i.ExtraFeatures)
                     .ThenInclude(l => l.ExtraFeature)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -189,7 +191,7 @@ public sealed class OrderService : IOrderService
     }
 
     private static OrderItem ToItem(OrderItemInput input) =>
-        OrderItem.Create(input.WidthCm, input.HeightCm, input.Quantity, input.UnitPrice, input.ExtraFeatureIds, input.Note);
+        OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.UnitPrice, input.ExtraFeatureIds, input.Note);
 
     private void AddAudit(string action, string entityType, string entityId, string? details)
     {
@@ -225,6 +227,8 @@ public sealed class OrderService : IOrderService
         Items = order.Items.Select(i => new OrderItemDto
         {
             Id = i.Id,
+            ProductId = i.ProductId,
+            ProductName = i.Product?.Name ?? string.Empty,
             WidthCm = i.WidthCm,
             HeightCm = i.HeightCm,
             Quantity = i.Quantity,

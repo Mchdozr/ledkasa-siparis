@@ -47,7 +47,7 @@ public class OrderTests
     [InlineData(80, 120, 0, "Adet")]
     public void CreateItem_ShouldReject_NonPositiveValues(decimal width, decimal height, int qty, string expected)
     {
-        var act = () => OrderItem.Create(width, height, qty, 1);
+        var act = () => OrderItem.Create(1, width, height, qty, 1);
 
         act.Should().Throw<DomainException>()
             .WithMessage($"*{expected}*");
@@ -56,7 +56,7 @@ public class OrderTests
     [Fact]
     public void CreateItem_ShouldReject_NegativePrice()
     {
-        var act = () => OrderItem.Create(80, 120, 1, -1);
+        var act = () => OrderItem.Create(1, 80, 120, 1, -1);
         act.Should().Throw<DomainException>().WithMessage("*Birim fiyat*");
     }
 
@@ -187,7 +187,7 @@ internal static class OrderFactory
             order,
             delivery,
             DeliveryPlace.Sirket,
-            [OrderItem.Create(80, 120, 2, 150m, [1], "köşe kesim")],
+            [OrderItem.Create(1, 80, 120, 2, 150m, [1], "köşe kesim")],
             "user-1",
             currency: currency);
     }

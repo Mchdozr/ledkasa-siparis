@@ -4,13 +4,14 @@
 @rendermode InteractiveServer
 @inject IOrderService Orders
 @inject IExtraFeatureService Features
+@inject IProductService ProductsApi
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
 <PageTitle>@(Id is null ? "Yeni sipariş" : "Sipariş düzenle") — LEDKASA</PageTitle>
 
 <h1 class="lk-page-title">@(Id is null ? "Yeni sipariş" : "Siparişi düzenle")</h1>
-<p class="lk-page-sub">Sipariş veren kişi, ölçüler, ekstra özellik ve teslim bilgileri.</p>
+<p class="lk-page-sub">Ürün, ölçü, ekstra özellik ve teslim bilgileri.</p>
 
 <EditForm Model="_draft" OnValidSubmit="SaveAsync">
     <DataAnnotationsValidator />
@@ -72,6 +73,14 @@
                 </div>
             </div>
             <MudGrid Spacing="3">
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int" @bind-Value="item.ProductId" Label="Ürün" Variant="Variant.Outlined">
+                        @foreach (var product in _products)
+                        {
+                            <MudSelectItem T="int" Value="@product.Id">@product.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
                 <MudItem xs="6" md="3">
                     <MudNumericField T="decimal" @bind-Value="item.WidthCm" Label="Yatay (cm)" Variant="Variant.Outlined"
                                     Min="0.01m" Step="0.01m" HideSpinButtons="true" Immediate="true"
@@ -109,6 +118,20 @@
         </MudPaper>
     }
 
+    <AuthorizeView Policy="@Policies.AdminFeatures" Context="auth">
+        <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+            <MudText Typo="Typo.subtitle1" Class="mb-2">Yeni ürün ekle</MudText>
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="8">
+                    <MudTextField @bind-Value="_newProductName" Label="Ürün adı" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-1" OnClick="AddProductAsync">Kataloğa ekle</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </AuthorizeView>
+
     <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddItem" Class="mb-4">Kalem ekle</MudButton>
 
     <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
@@ -133,12 +156,15 @@
     private DateTime? _orderDate;
     private DateTime? _deliveryDate;
     private IReadOnlyList<ExtraFeatureDto> _features = [];
+    private IReadOnlyList<ProductDto> _products = [];
+    private string _newProductName = string.Empty;
     private DateTime _rowVersion;
     private bool _saving;
 
     protected override async Task OnInitializedAsync()
     {
         _features = await Features.ListAsync(activeOnly: true);
+        _products = await ProductsApi.ListAsync(activeOnly: true);
         _orderDate = _draft.OrderDate.ToDateTime(TimeOnly.MinValue);
         _deliveryDate = _draft.DeliveryDate.ToDateTime(TimeOnly.MinValue);
 
@@ -160,6 +186,7 @@
         _draft.Notes = existing.Notes;
         _draft.Items = existing.Items.Select(i => new OrderItemInput
         {
+            ProductId = i.ProductId,
             WidthCm = i.WidthCm,
             HeightCm = i.HeightCm,
             Quantity = i.Quantity,
@@ -186,7 +213,24 @@
             _draft.DeliveryDate = DateOnly.FromDateTime(value.Value);
     }
 
-    private void AddItem() => _draft.Items.Add(new OrderItemInput());
+    private void AddItem() => _draft.Items.Add(new OrderItemInput { ProductId = _products.FirstOrDefault()?.Id ?? 1 });
+
+    private async Task AddProductAsync()
+    {
+        try
+        {
+            var id = await ProductsApi.CreateAsync(_newProductName);
+            _newProductName = string.Empty;
+            _products = await ProductsApi.ListAsync(activeOnly: true);
+            if (_draft.Items.Count > 0)
+                _draft.Items[^1].ProductId = id;
+            Snackbar.Add("Ürün eklendi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
 
     private void RemoveItem(int index) => _draft.Items.RemoveAt(index);
 

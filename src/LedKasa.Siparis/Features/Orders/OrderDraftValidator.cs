@@ -29,6 +29,7 @@ public sealed class OrderItemInputValidator : AbstractValidator<OrderItemInput>
 {
     public OrderItemInputValidator()
     {
+        RuleFor(x => x.ProductId).GreaterThan(0).WithMessage("Ürün seçimi zorunludur.");
         RuleFor(x => x.WidthCm).GreaterThan(0).WithMessage("Yatay ölçü sıfırdan büyük olmalıdır.");
         RuleFor(x => x.HeightCm).GreaterThan(0).WithMessage("Dikey ölçü sıfırdan büyük olmalıdır.");
         RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("Adet sıfırdan büyük olmalıdır.");

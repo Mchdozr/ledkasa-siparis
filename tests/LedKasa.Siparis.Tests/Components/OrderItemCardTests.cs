@@ -26,6 +26,7 @@ public class OrderItemCardTests : TestContext
             Quantity = 2,
             UnitPrice = 15,
             LineTotal = 30,
+            ProductName = "CNC LED Kasa",
             ExtraFeatureNames = ["Köşe kesim"],
             Note = "not"
         };
@@ -34,6 +35,7 @@ public class OrderItemCardTests : TestContext
             .Add(x => x.Item, item)
             .Add(x => x.Currency, Currency.Usd));
 
+        cut.Markup.Should().Contain("CNC LED Kasa");
         cut.Markup.Should().Contain("Ölçü");
         cut.Markup.Should().Contain("123 × 12 cm");
         cut.Markup.Should().Contain("Adet");

@@ -4,6 +4,7 @@ namespace LedKasa.Siparis.Features.Orders;
 
 public sealed class OrderItemInput
 {
+    public int ProductId { get; set; } = 1;
     public decimal WidthCm { get; set; }
     public decimal HeightCm { get; set; }
     public int Quantity { get; set; } = 1;
@@ -93,6 +94,8 @@ public sealed class OrderDetailDto
 public sealed class OrderItemDto
 {
     public int Id { get; init; }
+    public int ProductId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
     public decimal WidthCm { get; init; }
     public decimal HeightCm { get; init; }
     public int Quantity { get; init; }
