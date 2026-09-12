@@ -69,7 +69,7 @@
     </div>
 
     <div class="d-none d-md-block">
-        <MudTable Items="_result.Rows" Hover="true" Elevation="0" Class="lk-table" Breakpoint="Breakpoint.None">
+        <MudTable Items="PagedRows" Hover="true" Elevation="0" Class="lk-table" Breakpoint="Breakpoint.None">
             <HeaderContent>
                 <MudTh>Sipariş</MudTh>
                 <MudTh>Kişi</MudTh>
@@ -96,7 +96,7 @@
     </div>
 
     <div class="d-md-none">
-        @foreach (var row in _result.Rows)
+        @foreach (var row in PagedRows)
         {
             <MudPaper Class="lk-card pa-4 mb-3" Elevation="0">
                 <strong>@row.OrderNumber</strong>
@@ -105,13 +105,25 @@
             </MudPaper>
         }
     </div>
+
+    <MudPagination Count="@PageCount" Selected="_page" SelectedChanged="OnPage" Class="mt-4" />
 }
 
 @code {
+    private const int PageSize = 20;
     private readonly ReportRequest _request = new() { Anchor = TurkeyTime.Today };
     private IEnumerable<OrderStatus> _statuses = Enum.GetValues<OrderStatus>().Where(s => s != OrderStatus.Iptal).ToHashSet();
     private DateTime? _anchor = TurkeyTime.Today.ToDateTime(TimeOnly.MinValue);
     private ReportResult? _result;
+    private int _page = 1;
+
+    private IReadOnlyList<ReportRow> PagedRows =>
+        _result is null ? [] : _result.Rows.Skip((_page - 1) * PageSize).Take(PageSize).ToList();
+
+    private int PageCount =>
+        _result is null || _result.Rows.Count == 0
+            ? 1
+            : Math.Max(1, (int)Math.Ceiling(_result.Rows.Count / (double)PageSize));
 
     protected override Task OnInitializedAsync() => LoadAsync();
 
@@ -125,8 +137,11 @@
     private async Task LoadAsync()
     {
         _request.Statuses = _statuses.ToList();
+        _page = 1;
         _result = await ReportsApi.GetAsync(_request);
     }
+
+    private void OnPage(int page) => _page = page;
 
     private static string GetStatusText(List<string> selected)
         => selected.Count == 0 ? "İptal hariç" : string.Join(", ", selected);
