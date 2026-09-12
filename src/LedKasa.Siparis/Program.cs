@@ -79,6 +79,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddAuthorization(options => options.AddAppPolicies());
 
 builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection(TelegramOptions.Section));
+builder.Services.AddSingleton<TelegramRecipientHub>();
 builder.Services.AddHttpClient<ITelegramNotifier, TelegramNotifier>(client =>
 {
     client.BaseAddress = new Uri("https://api.telegram.org/");

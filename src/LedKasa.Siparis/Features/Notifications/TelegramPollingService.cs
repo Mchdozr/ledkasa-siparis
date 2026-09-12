@@ -7,31 +7,38 @@ public sealed class TelegramPollingService : BackgroundService
 {
     private readonly IHttpClientFactory _httpFactory;
     private readonly TelegramOptions _options;
+    private readonly TelegramRecipientHub _recipients;
     private readonly ILogger<TelegramPollingService> _logger;
 
     public TelegramPollingService(
         IHttpClientFactory httpFactory,
         IOptions<TelegramOptions> options,
+        TelegramRecipientHub recipients,
         ILogger<TelegramPollingService> logger)
     {
         _httpFactory = httpFactory;
         _options = options.Value;
+        _recipients = recipients;
         _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (string.IsNullOrWhiteSpace(_options.BotToken))
+        if (!_options.HasBot)
             return;
 
         var client = _httpFactory.CreateClient("telegram-bot");
+        _recipients.Remember(_options.TrimmedChatId);
+        if (_recipients.Current(_options.TrimmedChatId) is { } configuredChat)
+            await SendTextAsync(client, configuredChat, TelegramCommands.StartReply, stoppingToken);
+
         var offset = 0L;
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var url = $"/bot{_options.BotToken}/getUpdates?timeout=25&offset={offset}";
+                var url = $"/bot{_options.TrimmedToken}/getUpdates?timeout=25&offset={offset}";
                 using var response = await client.GetAsync(url, stoppingToken);
                 var json = await response.Content.ReadAsStringAsync(stoppingToken);
                 if (!response.IsSuccessStatusCode)
@@ -81,22 +88,23 @@ public sealed class TelegramPollingService : BackgroundService
                 continue;
 
             var chatId = message.GetProperty("chat").GetProperty("id").GetRawText();
-            await SendStartReplyAsync(client, chatId, stoppingToken);
+            _recipients.Remember(chatId);
+            await SendTextAsync(client, chatId, TelegramCommands.StartReply, stoppingToken);
         }
 
         return offset;
     }
 
-    private async Task SendStartReplyAsync(HttpClient client, string chatId, CancellationToken stoppingToken)
+    private async Task SendTextAsync(HttpClient client, string chatId, string text, CancellationToken stoppingToken)
     {
         using var content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["chat_id"] = chatId,
-            ["text"] = TelegramCommands.StartReply,
+            ["text"] = text,
             ["parse_mode"] = "HTML"
         });
-        using var response = await client.PostAsync($"/bot{_options.BotToken}/sendMessage", content, stoppingToken);
+        using var response = await client.PostAsync($"/bot{_options.TrimmedToken}/sendMessage", content, stoppingToken);
         if (!response.IsSuccessStatusCode)
-            _logger.LogWarning("Telegram /start yanıtı gönderilemedi: {Status}", (int)response.StatusCode);
+            _logger.LogWarning("Telegram mesajı gönderilemedi: {Status}", (int)response.StatusCode);
     }
 }

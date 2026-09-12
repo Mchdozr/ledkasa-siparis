@@ -8,6 +8,9 @@ public sealed class TelegramOptions
     public string? ChatId { get; set; }
     public string AppUrl { get; set; } = "https://siparis.ledkasa.com.tr";
 
-    public bool IsEnabled =>
-        !string.IsNullOrWhiteSpace(BotToken) && !string.IsNullOrWhiteSpace(ChatId);
+    public string? TrimmedToken => string.IsNullOrWhiteSpace(BotToken) ? null : BotToken.Trim();
+    public string? TrimmedChatId => string.IsNullOrWhiteSpace(ChatId) ? null : ChatId.Trim();
+
+    public bool HasBot => TrimmedToken is not null;
 }
+

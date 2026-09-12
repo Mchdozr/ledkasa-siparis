@@ -35,6 +35,25 @@ public class TelegramNotifierTests
     }
 
     [Fact]
+    public async Task MissingChatId_UsesRememberedRecipient()
+    {
+        var handler = new RecordingHandler();
+        var hub = new TelegramRecipientHub();
+        hub.Remember("-99");
+        var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.telegram.org/") };
+        var notifier = new TelegramNotifier(
+            http,
+            Options.Create(new TelegramOptions { BotToken = "123:ABC", ChatId = "" }),
+            hub,
+            NullLogger<TelegramNotifier>.Instance);
+
+        await notifier.NotifyOrderCreatedAsync(Sample());
+
+        handler.Calls.Should().Be(1);
+        handler.Body.Should().Contain("chat_id=-99");
+    }
+
+    [Fact]
     public async Task ApiError_ShouldNotThrow()
     {
         var handler = new RecordingHandler { Status = HttpStatusCode.BadRequest };
@@ -48,7 +67,7 @@ public class TelegramNotifierTests
     {
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.telegram.org/") };
         var options = Options.Create(new TelegramOptions { BotToken = token, ChatId = chatId });
-        return new TelegramNotifier(http, options, NullLogger<TelegramNotifier>.Instance);
+        return new TelegramNotifier(http, options, new TelegramRecipientHub(), NullLogger<TelegramNotifier>.Instance);
     }
 
     private static TelegramOrderNotice Sample() =>
