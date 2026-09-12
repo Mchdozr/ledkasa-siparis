@@ -209,7 +209,7 @@ public sealed class OrderService : IOrderService
         OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.UnitPrice, input.ExtraFeatureIds, input.Note);
 
     private Currency ApplyCurrencyPolicy(Currency requested, Currency? existing = null) =>
-        _currentUser.CanViewPrices ? requested : existing ?? Currency.Try;
+        _currentUser.CanViewPrices ? requested : existing ?? Currency.Usd;
 
     private OrderItemInput ApplyPricePolicy(OrderItemInput input, IReadOnlyDictionary<int, decimal>? existingPrices = null)
     {

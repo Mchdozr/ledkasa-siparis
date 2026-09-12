@@ -26,10 +26,10 @@ public class OrderServiceTests
         detail.GrandTotal.Should().Be(400);
         detail.Items[0].UnitPrice.Should().Be(100);
         detail.Items[0].LineTotal.Should().Be(400);
-        detail.Currency.Should().Be(Currency.Try);
+        detail.Currency.Should().Be(Currency.Usd);
         detail.DeliveryAddress.Should().Be("Fabrika deposu, Organize Sanayi");
         list.Items[0].GrandTotal.Should().Be(400);
-        list.Items[0].Currency.Should().Be(Currency.Try);
+        list.Items[0].Currency.Should().Be(Currency.Usd);
         list.TotalCount.Should().Be(1);
         db.AuditLogs.Should().Contain(a => a.Action == "OrderCreated");
     }
@@ -123,7 +123,7 @@ public class OrderServiceTests
         await staff.UpdateAsync(createdId, draft, created.RowVersion);
 
         var stored = await db.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == createdId);
-        stored.Currency.Should().Be(Currency.Try);
+        stored.Currency.Should().Be(Currency.Usd);
         stored.Items.Single().UnitPrice.Should().Be(100);
         stored.Items.Single().Quantity.Should().Be(2);
         stored.GrandTotal.Should().Be(200);

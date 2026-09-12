@@ -19,7 +19,7 @@ public sealed class PdfReportExporter : IPdfReportExporter
     private static readonly XPen RowLine = new(XColor.FromArgb(0xE0, 0xE0, 0xE0), 0.5);
     private static readonly XPen AccentLine = new(XColor.FromArgb(0xF4, 0x6F, 0x2C), 1);
 
-    private static readonly float[] ColumnWeights = [1.2f, 1.4f, 1f, 1f, 0.8f, 1f, 0.5f, 0.5f, 0.9f, 1.8f];
+    private static readonly float[] ColumnWeights = [1.15f, 1.7f, 0.85f, 0.85f, 0.7f, 0.85f, 0.45f, 0.45f, 0.85f, 2.3f];
     private static readonly string[] Headers =
     [
         "Sipariş No", "Sipariş Veren", "Sipariş", "Teslim", "Yer",
@@ -46,7 +46,8 @@ public sealed class PdfReportExporter : IPdfReportExporter
 
         const double margin = 28;
         const double headerHeight = 18;
-        const double rowHeight = 16;
+        const double lineHeight = 10.5;
+        const double rowPad = 3;
 
         PdfPage? page = null;
         XGraphics? gfx = null;
@@ -92,9 +93,6 @@ public sealed class PdfReportExporter : IPdfReportExporter
 
         foreach (var row in report.Rows)
         {
-            if (y + rowHeight > page!.Height - margin - 16)
-                NewPage();
-
             var values = new[]
             {
                 row.OrderNumber,
@@ -109,15 +107,33 @@ public sealed class PdfReportExporter : IPdfReportExporter
                 row.ItemSummary
             };
 
-            for (var i = 0; i < values.Length; i++)
+            var wrapped = values
+                .Select((value, i) => PdfCellText.Wrap(gfx!, value, cellFont, widths[i] - 4))
+                .ToArray();
+            var thisRowHeight = Math.Max(16, wrapped.Max(lines => lines.Count) * lineHeight + rowPad * 2);
+
+            if (y + thisRowHeight > page!.Height - margin - 16)
+                NewPage();
+
+            for (var i = 0; i < wrapped.Length; i++)
             {
-                gfx!.DrawString(values[i], cellFont, TextBrush,
-                    new XRect(xs[i] + 2, y, widths[i] - 4, rowHeight),
-                    new XStringFormat { Alignment = XStringAlignment.Near, LineAlignment = XLineAlignment.Center });
+                var state = gfx!.Save();
+                gfx.IntersectClip(new XRect(xs[i], y, widths[i], thisRowHeight));
+                for (var line = 0; line < wrapped[i].Count; line++)
+                {
+                    gfx.DrawString(
+                        wrapped[i][line],
+                        cellFont,
+                        TextBrush,
+                        new XRect(xs[i] + 2, y + rowPad + line * lineHeight, widths[i] - 4, lineHeight),
+                        new XStringFormat { Alignment = XStringAlignment.Near, LineAlignment = XLineAlignment.Center });
+                }
+
+                gfx.Restore(state);
             }
 
-            gfx!.DrawLine(RowLine, margin, y + rowHeight, page.Width - margin, y + rowHeight);
-            y += rowHeight;
+            gfx!.DrawLine(RowLine, margin, y + thisRowHeight, page.Width - margin, y + thisRowHeight);
+            y += thisRowHeight;
         }
 
         gfx?.Dispose();
@@ -151,5 +167,56 @@ public sealed class PdfReportExporter : IPdfReportExporter
         }
 
         return (xs, widths);
+    }
+}
+
+internal static class PdfCellText
+{
+    public static IReadOnlyList<string> Wrap(XGraphics gfx, string text, XFont font, double maxWidth)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return [string.Empty];
+        if (maxWidth <= 4 || gfx.MeasureString(text, font).Width <= maxWidth)
+            return [text];
+
+        var lines = new List<string>();
+        var current = string.Empty;
+        foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var candidate = current.Length == 0 ? word : current + " " + word;
+            if (gfx.MeasureString(candidate, font).Width <= maxWidth)
+            {
+                current = candidate;
+                continue;
+            }
+
+            if (current.Length > 0)
+                lines.Add(current);
+
+            if (gfx.MeasureString(word, font).Width <= maxWidth)
+            {
+                current = word;
+                continue;
+            }
+
+            current = string.Empty;
+            foreach (var ch in word)
+            {
+                var next = current + ch;
+                if (gfx.MeasureString(next, font).Width <= maxWidth || current.Length == 0)
+                {
+                    current = next;
+                    continue;
+                }
+
+                lines.Add(current);
+                current = ch.ToString();
+            }
+        }
+
+        if (current.Length > 0)
+            lines.Add(current);
+
+        return lines.Count == 0 ? [string.Empty] : lines;
     }
 }

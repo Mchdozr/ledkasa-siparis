@@ -29,7 +29,7 @@ public static class TurkeyTime
         var number = amount.ToString("N2", Culture);
         var symbol = currency switch
         {
-            Currency.Try => "₺",
+            Currency.Try => "TL",
             Currency.Usd => "$",
             Currency.Eur => "€",
             _ => throw new ArgumentOutOfRangeException(nameof(currency), currency, null)

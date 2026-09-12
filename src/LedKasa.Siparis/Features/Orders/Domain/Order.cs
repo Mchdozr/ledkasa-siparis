@@ -12,7 +12,7 @@ public sealed class Order
     public DateOnly DeliveryDate { get; private set; }
     public DeliveryPlace DeliveryPlace { get; private set; }
     public string DeliveryAddress { get; private set; } = string.Empty;
-    public Currency Currency { get; private set; } = Currency.Try;
+    public Currency Currency { get; private set; } = Currency.Usd;
     public OrderStatus Status => _status;
     public string? Notes { get; private set; }
     public string CreatedByUserId { get; private set; } = string.Empty;
@@ -38,7 +38,7 @@ public sealed class Order
         string createdByUserId,
         string? notes = null,
         DateTime? nowUtc = null,
-        Currency currency = Currency.Try)
+        Currency currency = Currency.Usd)
     {
         if (string.IsNullOrWhiteSpace(orderNumber))
             throw new DomainException("Sipariş numarası zorunludur.");

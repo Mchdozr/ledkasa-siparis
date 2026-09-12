@@ -9,11 +9,11 @@ public class TurkeyTimeTests
     [Fact]
     public void FormatMoney_ShouldDefaultToTry()
     {
-        TurkeyTime.FormatMoney(1500.5m).Should().Be("1.500,50 ₺");
+        TurkeyTime.FormatMoney(1500.5m).Should().Be("1.500,50 TL");
     }
 
     [Theory]
-    [InlineData(Currency.Try, "1.500,50 ₺")]
+    [InlineData(Currency.Try, "1.500,50 TL")]
     [InlineData(Currency.Usd, "1.500,50 $")]
     [InlineData(Currency.Eur, "1.500,50 €")]
     public void FormatMoney_ShouldUseCurrencySymbol(Currency currency, string expected)
@@ -25,6 +25,6 @@ public class TurkeyTimeTests
     public void FormatMoneyLine_ShouldShowUnitTimesQuantity()
     {
         TurkeyTime.FormatMoneyLine(15m, 2, 30m, Currency.Try)
-            .Should().Be("15,00 ₺ × 2 = 30,00 ₺");
+            .Should().Be("15,00 TL × 2 = 30,00 TL");
     }
 }

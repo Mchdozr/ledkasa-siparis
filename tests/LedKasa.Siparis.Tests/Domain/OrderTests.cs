@@ -147,9 +147,9 @@ public class OrderTests
     }
 
     [Fact]
-    public void Create_ShouldDefaultCurrencyToTry()
+    public void Create_ShouldDefaultCurrencyToUsd()
     {
-        OrderFactory.Create().Currency.Should().Be(Currency.Try);
+        OrderFactory.Create().Currency.Should().Be(Currency.Usd);
     }
 
     [Fact]
@@ -175,11 +175,11 @@ public class OrderTests
             order.DeliveryDate,
             order.DeliveryPlace,
             order.DeliveryAddress,
-            Currency.Usd,
+            Currency.Eur,
             null,
             "u1");
 
-        order.Currency.Should().Be(Currency.Usd);
+        order.Currency.Should().Be(Currency.Eur);
     }
 
     [Fact]
@@ -196,7 +196,7 @@ internal static class OrderFactory
         string customerName = "Ahmet Yılmaz",
         DateOnly? orderDate = null,
         DateOnly? deliveryDate = null,
-        Currency currency = Currency.Try)
+        Currency currency = Currency.Usd)
     {
         var order = orderDate ?? new DateOnly(2026, 9, 10);
         var delivery = deliveryDate ?? new DateOnly(2026, 9, 12);

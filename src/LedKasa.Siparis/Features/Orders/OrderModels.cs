@@ -23,7 +23,7 @@ public sealed class OrderDraft
     public DateOnly DeliveryDate { get; set; }
     public DeliveryPlace DeliveryPlace { get; set; } = DeliveryPlace.Sirket;
     public string DeliveryAddress { get; set; } = string.Empty;
-    public Currency Currency { get; set; } = Currency.Try;
+    public Currency Currency { get; set; } = Currency.Usd;
     public string? Notes { get; set; }
     public List<OrderItemInput> Items { get; set; } = [new()];
 

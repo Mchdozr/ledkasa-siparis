@@ -29,7 +29,7 @@ public class ReportServiceTests
         report.Rows.Single().CustomerName.Should().Be("İçerde");
         report.Rows.Single().GrandTotal.Should().Be(25);
         report.Rows.Single().Currency.Should().Be(Currency.Try);
-        report.FormattedGrandTotal.Should().Be("25,00 ₺");
+        report.FormattedGrandTotal.Should().Be("25,00 TL");
         report.Title.Should().Contain("Haftalık");
     }
 
@@ -57,7 +57,7 @@ public class ReportServiceTests
         text.Should().Contain(report.Rows[0].OrderNumber);
         text.Should().Contain("LEDKASA Sipariş Raporu");
         text.Should().Contain("Tutar");
-        text.Should().Contain("25,00 ₺");
+        text.Should().Contain("25,00 TL");
     }
 
     [Fact]
@@ -81,6 +81,40 @@ public class ReportServiceTests
         report.FormattedGrandTotal.Should().Be("25,00 $");
     }
 
+    [Fact]
+    public void Pdf_ShouldWrapLongCustomerAndMeasures()
+    {
+        var report = new ReportResult
+        {
+            Title = "Günlük Liste — 12.09.2026",
+            OrderCount = 1,
+            ItemCount = 2,
+            TotalQuantity = 12,
+            FormattedGrandTotal = "1.250,00 $",
+            Rows =
+            [
+                new ReportRow
+                {
+                    OrderNumber = "LK-20260912-0001",
+                    CustomerName = "Çok Uzun İsimli Müşteri Sanayi ve Ticaret Anonim Şirketi",
+                    OrderDate = new DateOnly(2026, 9, 12),
+                    DeliveryDate = new DateOnly(2026, 9, 16),
+                    DeliveryPlace = "Şirket",
+                    Status = "Yeni",
+                    ItemCount = 2,
+                    TotalQuantity = 12,
+                    GrandTotal = 1250,
+                    Currency = Currency.Usd,
+                    ItemSummary = "Kapaksız LED Kabinet 50x100 cm x4 · CNC LED Kasa 80x120 cm x8 · Rental LED Kabinet 64x48 cm x20"
+                }
+            ]
+        };
+
+        var pdf = new PdfReportExporter().Export(report);
+        pdf.Should().StartWith("%PDF"u8.ToArray());
+        pdf.Length.Should().BeGreaterThan(1000);
+    }
+
     private static OrderDraft Draft(string name, DateOnly date) => new()
     {
         CustomerName = name,
@@ -88,6 +122,7 @@ public class ReportServiceTests
         DeliveryDate = date.AddDays(2),
         DeliveryPlace = DeliveryPlace.Sirket,
         DeliveryAddress = "Teslimat adresi",
+        Currency = Currency.Try,
         Items = [new OrderItemInput { ProductId = 1, WidthCm = 50, HeightCm = 50, Quantity = 1, UnitPrice = 25 }]
     };
 }
