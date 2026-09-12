@@ -14,15 +14,15 @@
 }
 else if (_missing || _order is null)
 {
+    <PageHeader Title="Sipariş" Parent="Siparişler" BackHref="/orders" />
     <MudAlert Severity="Severity.Warning">Sipariş bulunamadı.</MudAlert>
 }
 else
 {
-    <div class="lk-toolbar">
-        <div>
-            <h1 class="lk-page-title">@_order.OrderNumber</h1>
-            <p class="lk-page-sub">@_order.CustomerName · @DisplayNames.Place(_order.DeliveryPlace)</p>
-        </div>
+    <PageHeader Title="@_order.OrderNumber"
+                Parent="Siparişler"
+                BackHref="/orders"
+                Subtitle="@($"{_order.CustomerName} · {DisplayNames.Place(_order.DeliveryPlace)}")">
         <div class="lk-actions">
             <AuthorizeView Policy="@Policies.OrdersEdit">
                 @if (_order.CanEdit)
@@ -31,7 +31,7 @@ else
                 }
             </AuthorizeView>
         </div>
-    </div>
+    </PageHeader>
 
     <MudGrid Spacing="3">
         <MudItem xs="12" md="8">

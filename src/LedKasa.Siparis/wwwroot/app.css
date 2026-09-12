@@ -59,6 +59,10 @@ html, body {
     padding-top: var(--lk-safe-top);
 }
 
+.lk-drawer:not(.lk-drawer-ready) {
+    transition: none !important;
+}
+
 .lk-nav .mud-nav-link {
     color: #d7e2ee !important;
     border-radius: 10px;
@@ -92,6 +96,68 @@ html, body {
 .lk-page-sub {
     margin: 4px 0 20px;
     color: #5b6b7c;
+}
+
+.lk-page-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+}
+
+.lk-back {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    margin: -2px 0 0 -8px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--lk-navy);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.lk-back:hover {
+    background: rgba(11, 31, 58, 0.06);
+}
+
+.lk-crumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.lk-crumb a {
+    color: #5b6b7c;
+    text-decoration: none;
+}
+
+.lk-crumb a:hover {
+    color: var(--lk-orange);
+}
+
+.lk-crumb span {
+    color: #c5d0db;
+    font-weight: 600;
+}
+
+.lk-crumb strong {
+    color: var(--lk-ink);
+}
+
+.lk-page-head .lk-page-sub {
+    margin-bottom: 0;
+}
+
+#components-reconnect-modal {
+    top: var(--lk-safe-top) !important;
 }
 
 .lk-card {

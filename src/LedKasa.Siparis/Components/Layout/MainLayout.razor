@@ -36,7 +36,7 @@
         </AuthorizeView>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Class="lk-drawer" Breakpoint="Breakpoint.Lg"
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Class="@DrawerClass" Breakpoint="Breakpoint.Lg"
                Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Never"
                OverlayAutoClose="true">
         <NavMenu />
@@ -51,11 +51,14 @@
 </MudLayout>
 
 @code {
-    private bool _drawerOpen = true;
+    private bool _drawerOpen;
+    private bool _drawerReady;
     private bool _subscribed;
-    private bool _wasDesktop = true;
+    private bool _wasDesktop;
 
     public Guid Id { get; } = Guid.NewGuid();
+
+    private string DrawerClass => _drawerReady ? "lk-drawer lk-drawer-ready" : "lk-drawer";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -75,9 +78,17 @@
     public Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs args)
     {
         var desktop = IsDesktop(args.Breakpoint);
+        if (!_drawerReady)
+        {
+            _drawerOpen = desktop;
+            _drawerReady = true;
+            _wasDesktop = desktop;
+            return InvokeAsync(StateHasChanged);
+        }
+
         if (desktop)
             _drawerOpen = true;
-        else if (args.IsImmediate || _wasDesktop)
+        else if (_wasDesktop)
             _drawerOpen = false;
 
         _wasDesktop = desktop;
