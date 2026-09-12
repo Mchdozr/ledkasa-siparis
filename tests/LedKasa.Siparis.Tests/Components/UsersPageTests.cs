@@ -38,8 +38,10 @@ public class UsersPageTests : TestContext
     public void Edit_ShouldOpenCredentialsForm()
     {
         var cut = RenderPage();
-        cut.FindAll("button").First(b => b.TextContent.Contains("Düzenle")).Click();
-        cut.Markup.Should().Contain("Giriş bilgilerini düzenle");
+        cut.WaitForAssertion(() =>
+            cut.FindAll("button").Count(b => b.TextContent.Contains("Düzenle")).Should().BeGreaterThan(0));
+        cut.FindAll("button").Last(b => b.TextContent.Contains("Düzenle")).Click();
+        cut.WaitForAssertion(() => cut.Markup.Should().Contain("Giriş bilgilerini düzenle"));
     }
 
     private IRenderedFragment RenderPage() => Render(builder =>
