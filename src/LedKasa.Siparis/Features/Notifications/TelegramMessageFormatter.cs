@@ -22,11 +22,14 @@ public static class TelegramMessageFormatter
         text.AppendLine("<b>Kalemler</b>");
         foreach (var line in order.Lines)
         {
-            text.AppendLine($"• {Esc(line.ProductName)} {FormatCm(line.WidthCm)}x{FormatCm(line.HeightCm)} cm × {line.Quantity}");
+            text.AppendLine($"Ürün: {Esc(line.ProductName)}");
+            text.AppendLine($"Ölçü: {FormatCm(line.WidthCm)} × {FormatCm(line.HeightCm)} cm");
+            text.AppendLine($"Adet: {line.Quantity}");
             if (line.Extras.Count > 0)
-                text.AppendLine($"  + {Esc(string.Join(", ", line.Extras))}");
+                text.AppendLine($"Ekstra: {Esc(string.Join(", ", line.Extras))}");
             if (!string.IsNullOrWhiteSpace(line.Note))
-                text.AppendLine($"  not: {Esc(line.Note)}");
+                text.AppendLine($"Not: {Esc(line.Note)}");
+            text.AppendLine();
         }
 
         text.AppendLine();

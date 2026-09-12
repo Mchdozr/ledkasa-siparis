@@ -36,9 +36,10 @@ public class TelegramMessageFormatterTests
         text.Should().Contain("Teslim yeri: Fabrika");
         text.Should().Contain("Teslimat adresi: OSB 2. Cad.");
         text.Should().Contain("Not: acele");
-        text.Should().Contain("Rental LED Kabinet");
-        text.Should().Contain("96x96 cm × 4");
-        text.Should().Contain("Köşe kesim");
+        text.Should().Contain("Ürün: Rental LED Kabinet");
+        text.Should().Contain("Ölçü: 96 × 96 cm");
+        text.Should().Contain("Adet: 4");
+        text.Should().Contain("Ekstra: Köşe kesim");
         text.Should().Contain("Oluşturan: Admin");
         text.Should().NotContain("400,00 $");
         text.Should().NotContain("Toplam");
