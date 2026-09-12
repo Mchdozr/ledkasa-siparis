@@ -1,5 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@implements IBrowserViewportObserver
+@implements IAsyncDisposable
 @using LedKasa.Siparis.Theming
+@inject IBrowserViewportService BrowserViewport
 
 <MudThemeProvider Theme="LedKasaTheme.Create()" @rendermode="InteractiveServer" />
 <MudPopoverProvider @rendermode="InteractiveServer" />
@@ -10,13 +13,13 @@
     <MudAppBar Elevation="0" Class="lk-appbar">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
                        Class="d-lg-none" OnClick="ToggleDrawer" aria-label="Menü" />
-        <div class="lk-brand">
+        <a href="/" class="lk-brand" aria-label="Anasayfa">
             <span class="lk-mark">LK</span>
             <div>
                 <strong>LEDKASA</strong>
                 <small>Sipariş Operasyonu</small>
             </div>
-        </div>
+        </a>
         <MudSpacer />
         <OfflineBanner />
         <InstallPrompt />
@@ -48,7 +51,47 @@
 </MudLayout>
 
 @code {
-    private bool _drawerOpen;
+    private bool _drawerOpen = true;
+    private bool _subscribed;
+    private bool _wasDesktop = true;
+
+    public Guid Id { get; } = Guid.NewGuid();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_subscribed)
+            return;
+
+        try
+        {
+            await BrowserViewport.SubscribeAsync(this, fireImmediately: true);
+            _subscribed = true;
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    public Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs args)
+    {
+        var desktop = IsDesktop(args.Breakpoint);
+        if (desktop)
+            _drawerOpen = true;
+        else if (args.IsImmediate || _wasDesktop)
+            _drawerOpen = false;
+
+        _wasDesktop = desktop;
+        return InvokeAsync(StateHasChanged);
+    }
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_subscribed)
+            await BrowserViewport.UnsubscribeAsync(this);
+    }
+
+    private static bool IsDesktop(Breakpoint breakpoint) =>
+        breakpoint is Breakpoint.Lg or Breakpoint.Xl or Breakpoint.Xxl;
 }
