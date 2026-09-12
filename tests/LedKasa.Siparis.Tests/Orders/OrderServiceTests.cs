@@ -129,17 +129,38 @@ public class OrderServiceTests
         stored.GrandTotal.Should().Be(200);
     }
 
+    [Fact]
+    public async Task List_ShouldApplySelectedSort()
+    {
+        await using var db = TestDb.Create();
+        var service = CreateService(db);
+        await service.CreateAsync(Draft("Orta", new DateOnly(2026, 9, 10), new DateOnly(2026, 9, 20)));
+        await service.CreateAsync(Draft("Yeni", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 15)));
+        await service.CreateAsync(Draft("Eski", new DateOnly(2026, 9, 8), new DateOnly(2026, 9, 30)));
+
+        (await Names(service, OrderSort.NewestFirst)).Should().Equal("Yeni", "Orta", "Eski");
+        (await Names(service, OrderSort.OldestFirst)).Should().Equal("Eski", "Orta", "Yeni");
+        (await Names(service, OrderSort.NearestDelivery)).Should().Equal("Yeni", "Orta", "Eski");
+        (await Names(service, OrderSort.FarthestDelivery)).Should().Equal("Eski", "Orta", "Yeni");
+    }
+
+    private static async Task<string[]> Names(OrderService service, OrderSort sort)
+    {
+        var list = await service.ListAsync(new OrderListFilter { Sort = sort });
+        return list.Items.Select(x => x.CustomerName).ToArray();
+    }
+
     private static OrderService CreateService(
         LedKasa.Siparis.Data.ApplicationDbContext db,
         bool canViewPrices = true,
         bool canCreateOrders = true)
         => new(db, new TestCurrentUser { CanViewPrices = canViewPrices, CanCreateOrders = canCreateOrders }, new OrderDraftValidator());
 
-    private static OrderDraft Draft(string name) => new()
+    private static OrderDraft Draft(string name, DateOnly? orderDate = null, DateOnly? deliveryDate = null) => new()
     {
         CustomerName = name,
-        OrderDate = new DateOnly(2026, 9, 10),
-        DeliveryDate = new DateOnly(2026, 9, 12),
+        OrderDate = orderDate ?? new DateOnly(2026, 9, 10),
+        DeliveryDate = deliveryDate ?? new DateOnly(2026, 9, 12),
         DeliveryPlace = DeliveryPlace.Fabrika,
         DeliveryAddress = "Fabrika deposu, Organize Sanayi",
         Items =

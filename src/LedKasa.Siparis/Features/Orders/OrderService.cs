@@ -65,9 +65,7 @@ public sealed class OrderService : IOrderService
 
         var total = await query.CountAsync(cancellationToken);
         var canViewPrices = _currentUser.CanViewPrices;
-        var items = await query
-            .OrderByDescending(o => o.OrderDate)
-            .ThenByDescending(o => o.Id)
+        var items = await ApplySort(query, filter.Sort)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(o => new OrderListItemDto
@@ -196,6 +194,16 @@ public sealed class OrderService : IOrderService
 
         return OrderNumberFormatter.Format(orderDate, next);
     }
+
+    private static IOrderedQueryable<Order> ApplySort(IQueryable<Order> query, OrderSort sort) =>
+        sort switch
+        {
+            OrderSort.NewestFirst => query.OrderByDescending(o => o.OrderDate).ThenByDescending(o => o.Id),
+            OrderSort.OldestFirst => query.OrderBy(o => o.OrderDate).ThenBy(o => o.Id),
+            OrderSort.NearestDelivery => query.OrderBy(o => o.DeliveryDate).ThenBy(o => o.Id),
+            OrderSort.FarthestDelivery => query.OrderByDescending(o => o.DeliveryDate).ThenByDescending(o => o.Id),
+            _ => throw new ArgumentOutOfRangeException(nameof(sort), sort, null)
+        };
 
     private static OrderItem ToItem(OrderItemInput input) =>
         OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.UnitPrice, input.ExtraFeatureIds, input.Note);

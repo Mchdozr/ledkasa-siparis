@@ -20,7 +20,7 @@
 
 <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
     <MudGrid Spacing="2">
-        <MudItem xs="12" md="4">
+        <MudItem xs="12" md="3">
             <MudTextField @bind-Value="_filter.Search" Label="Sipariş no / kişi" Variant="Variant.Outlined"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                           Immediate="false" OnKeyDown="OnSearchKey" />
@@ -37,6 +37,15 @@
             <MudSelect T="DeliveryPlace?" @bind-Value="_filter.DeliveryPlace" Label="Teslim yeri" Variant="Variant.Outlined" Clearable="true">
                 <MudSelectItem Value="@((DeliveryPlace?)DeliveryPlace.Sirket)">Şirket</MudSelectItem>
                 <MudSelectItem Value="@((DeliveryPlace?)DeliveryPlace.Fabrika)">Fabrika</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="OrderSort" Value="_filter.Sort" ValueChanged="OnSortChanged" Label="Sırala" Variant="Variant.Outlined">
+                @foreach (var sort in Enum.GetValues<OrderSort>())
+                {
+                    var option = sort;
+                    <MudSelectItem Value="@option">@DisplayNames.Sort(option)</MudSelectItem>
+                }
             </MudSelect>
         </MudItem>
         <MudItem xs="6" md="2">
@@ -135,6 +144,12 @@ else if (_result is not null)
     {
         if (e.Key == "Enter")
             await SearchAsync();
+    }
+
+    private Task OnSortChanged(OrderSort sort)
+    {
+        _filter.Sort = sort;
+        return SearchAsync();
     }
 
     private async Task SearchAsync()

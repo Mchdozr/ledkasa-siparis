@@ -27,4 +27,13 @@ public static class DisplayNames
         Domain.Currency.Eur => "EUR",
         _ => throw new ArgumentOutOfRangeException(nameof(currency), currency, null)
     };
+
+    public static string Sort(OrderSort sort) => sort switch
+    {
+        OrderSort.NewestFirst => "Yeniden eskiye",
+        OrderSort.OldestFirst => "Eskiden yeniye",
+        OrderSort.NearestDelivery => "En yakın teslim",
+        OrderSort.FarthestDelivery => "En uzak teslim",
+        _ => throw new ArgumentOutOfRangeException(nameof(sort), sort, null)
+    };
 }
