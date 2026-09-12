@@ -9,6 +9,7 @@ public interface ICurrentUser
     string? DisplayName { get; }
     string? UserName { get; }
     bool CanViewPrices { get; }
+    bool CanCreateOrders { get; }
 }
 
 public sealed class CurrentUser : ICurrentUser
@@ -36,4 +37,6 @@ public sealed class CurrentUser : ICurrentUser
                    (user.IsInRole(AppRoles.Yonetici) || user.IsInRole(AppRoles.Muhasebe));
         }
     }
+
+    public bool CanCreateOrders => _http.HttpContext?.User.IsInRole(AppRoles.Yonetici) == true;
 }

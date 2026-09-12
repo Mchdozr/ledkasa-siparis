@@ -1,6 +1,6 @@
 @page "/orders/new"
 @page "/orders/{Id:int}/edit"
-@attribute [Authorize(Policy = Policies.OrdersCreate)]
+@attribute [Authorize(Policy = Policies.OrdersEdit)]
 @rendermode InteractiveServer
 @inject IOrderService Orders
 @inject IExtraFeatureService Features
@@ -42,6 +42,10 @@
             </MudItem>
             <MudItem xs="6" md="3">
                 <MudDatePicker Date="_deliveryDate" DateChanged="OnDeliveryDate" Label="Teslim tarihi" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_draft.DeliveryAddress" Label="Sipariş teslimat adresi" Variant="Variant.Outlined"
+                              Lines="2" Required="true" />
             </MudItem>
             <MudItem xs="12" md="9">
                 <MudTextField @bind-Value="_draft.Notes" Label="Sipariş notu" Variant="Variant.Outlined" Lines="2" />
@@ -161,6 +165,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (Id is null && !CurrentUser.CanCreateOrders)
+        {
+            Navigation.NavigateTo("/orders");
+            return;
+        }
+
         _features = await Features.ListAsync(activeOnly: true);
         _products = await ProductsApi.ListAsync(activeOnly: true);
         _orderDate = _draft.OrderDate.ToDateTime(TimeOnly.MinValue);
@@ -180,6 +190,7 @@
         _draft.OrderDate = existing.OrderDate;
         _draft.DeliveryDate = existing.DeliveryDate;
         _draft.DeliveryPlace = existing.DeliveryPlace;
+        _draft.DeliveryAddress = existing.DeliveryAddress;
         _draft.Currency = existing.Currency;
         _draft.Notes = existing.Notes;
         _draft.Items = existing.Items.Select(i => new OrderItemInput

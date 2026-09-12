@@ -24,6 +24,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasIndex(x => new { x.OrderDate, x.DeliveryPlace });
 
         builder.Property(x => x.DeliveryPlace).HasConversion<int>().IsRequired();
+        builder.Property(x => x.DeliveryAddress).HasMaxLength(400).IsRequired();
         builder.Property(x => x.Currency).HasConversion<int>().IsRequired();
 
         builder.Property(x => x.Status)

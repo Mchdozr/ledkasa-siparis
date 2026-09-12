@@ -111,6 +111,9 @@ public sealed class OrderService : IOrderService
 
     public async Task<int> CreateAsync(OrderDraft draft, CancellationToken cancellationToken = default)
     {
+        if (!_currentUser.CanCreateOrders)
+            throw new DomainException("Sipariş oluşturma yetkiniz yok.");
+
         await _validator.ValidateAndThrowAsync(draft, cancellationToken);
 
         var items = draft.Items.Select(input => ToItem(ApplyPricePolicy(input))).ToList();
@@ -121,6 +124,7 @@ public sealed class OrderService : IOrderService
             draft.OrderDate,
             draft.DeliveryDate,
             draft.DeliveryPlace,
+            draft.DeliveryAddress,
             items,
             _currentUser.UserId,
             draft.Notes,
@@ -145,6 +149,7 @@ public sealed class OrderService : IOrderService
             draft.OrderDate,
             draft.DeliveryDate,
             draft.DeliveryPlace,
+            draft.DeliveryAddress,
             ApplyCurrencyPolicy(draft.Currency, order.Currency),
             draft.Notes,
             _currentUser.UserId);
@@ -233,6 +238,7 @@ public sealed class OrderService : IOrderService
             OrderDate = order.OrderDate,
             DeliveryDate = order.DeliveryDate,
             DeliveryPlace = order.DeliveryPlace,
+            DeliveryAddress = order.DeliveryAddress,
             Currency = canViewPrices ? order.Currency : Currency.Try,
             Status = order.Status,
             Notes = order.Notes,

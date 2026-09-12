@@ -11,6 +11,7 @@ public sealed class Order
     public DateOnly OrderDate { get; private set; }
     public DateOnly DeliveryDate { get; private set; }
     public DeliveryPlace DeliveryPlace { get; private set; }
+    public string DeliveryAddress { get; private set; } = string.Empty;
     public Currency Currency { get; private set; } = Currency.Try;
     public OrderStatus Status => _status;
     public string? Notes { get; private set; }
@@ -32,6 +33,7 @@ public sealed class Order
         DateOnly orderDate,
         DateOnly deliveryDate,
         DeliveryPlace deliveryPlace,
+        string deliveryAddress,
         IEnumerable<OrderItem> items,
         string createdByUserId,
         string? notes = null,
@@ -42,6 +44,8 @@ public sealed class Order
             throw new DomainException("Sipariş numarası zorunludur.");
         if (string.IsNullOrWhiteSpace(customerName))
             throw new DomainException("Sipariş veren kişi zorunludur.");
+        if (string.IsNullOrWhiteSpace(deliveryAddress))
+            throw new DomainException("Sipariş teslimat adresi zorunludur.");
         if (string.IsNullOrWhiteSpace(createdByUserId))
             throw new DomainException("Oluşturan kullanıcı zorunludur.");
         if (!Enum.IsDefined(deliveryPlace))
@@ -62,6 +66,7 @@ public sealed class Order
             OrderDate = orderDate,
             DeliveryDate = deliveryDate,
             DeliveryPlace = deliveryPlace,
+            DeliveryAddress = deliveryAddress.Trim(),
             Currency = currency,
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
             CreatedByUserId = createdByUserId,
@@ -77,6 +82,7 @@ public sealed class Order
         DateOnly orderDate,
         DateOnly deliveryDate,
         DeliveryPlace deliveryPlace,
+        string deliveryAddress,
         Currency currency,
         string? notes,
         string updatedByUserId,
@@ -85,6 +91,8 @@ public sealed class Order
         EnsureEditable();
         if (string.IsNullOrWhiteSpace(customerName))
             throw new DomainException("Sipariş veren kişi zorunludur.");
+        if (string.IsNullOrWhiteSpace(deliveryAddress))
+            throw new DomainException("Sipariş teslimat adresi zorunludur.");
         if (!Enum.IsDefined(deliveryPlace))
             throw new DomainException("Teslim yeri geçersiz.");
         if (!Enum.IsDefined(currency))
@@ -98,6 +106,7 @@ public sealed class Order
         OrderDate = orderDate;
         DeliveryDate = deliveryDate;
         DeliveryPlace = deliveryPlace;
+        DeliveryAddress = deliveryAddress.Trim();
         Currency = currency;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         Touch(updatedByUserId, nowUtc);

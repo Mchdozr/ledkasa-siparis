@@ -87,6 +87,7 @@ public class ReportServiceTests
         OrderDate = date,
         DeliveryDate = date.AddDays(2),
         DeliveryPlace = DeliveryPlace.Sirket,
+        DeliveryAddress = "Teslimat adresi",
         Items = [new OrderItemInput { ProductId = 1, WidthCm = 50, HeightCm = 50, Quantity = 1, UnitPrice = 25 }]
     };
 }

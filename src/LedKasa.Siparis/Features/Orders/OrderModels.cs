@@ -22,6 +22,7 @@ public sealed class OrderDraft
     public DateOnly OrderDate { get; set; }
     public DateOnly DeliveryDate { get; set; }
     public DeliveryPlace DeliveryPlace { get; set; } = DeliveryPlace.Sirket;
+    public string DeliveryAddress { get; set; } = string.Empty;
     public Currency Currency { get; set; } = Currency.Try;
     public string? Notes { get; set; }
     public List<OrderItemInput> Items { get; set; } = [new()];
@@ -79,6 +80,7 @@ public sealed class OrderDetailDto
     public DateOnly OrderDate { get; init; }
     public DateOnly DeliveryDate { get; init; }
     public DeliveryPlace DeliveryPlace { get; init; }
+    public string DeliveryAddress { get; init; } = string.Empty;
     public Currency Currency { get; init; }
     public OrderStatus Status { get; init; }
     public string? Notes { get; init; }

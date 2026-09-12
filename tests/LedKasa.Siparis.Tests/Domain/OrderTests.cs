@@ -26,6 +26,22 @@ public class OrderTests
     }
 
     [Fact]
+    public void Create_ShouldReject_EmptyDeliveryAddress()
+    {
+        var blank = () => Order.Create(
+            "LK-20260910-0001",
+            "Ahmet",
+            new DateOnly(2026, 9, 10),
+            new DateOnly(2026, 9, 12),
+            DeliveryPlace.Sirket,
+            "  ",
+            [OrderItem.Create(1, 80, 120, 1, 10)],
+            "user-1");
+
+        blank.Should().Throw<DomainException>().WithMessage("*teslimat adresi*");
+    }
+
+    [Fact]
     public void Create_ShouldReject_NoItems()
     {
         var act = () => Order.Create(
@@ -34,6 +50,7 @@ public class OrderTests
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 12),
             DeliveryPlace.Sirket,
+            "Organize Sanayi 1. Cadde No:12",
             [],
             "user-1");
 
@@ -121,6 +138,7 @@ public class OrderTests
             order.OrderDate,
             order.DeliveryDate,
             DeliveryPlace.Fabrika,
+            "Fabrika deposu",
             Currency.Usd,
             null,
             "u1");
@@ -156,6 +174,7 @@ public class OrderTests
             order.OrderDate,
             order.DeliveryDate,
             order.DeliveryPlace,
+            order.DeliveryAddress,
             Currency.Usd,
             null,
             "u1");
@@ -187,6 +206,7 @@ internal static class OrderFactory
             order,
             delivery,
             DeliveryPlace.Sirket,
+            "Atatürk Cad. No:10 İstanbul",
             [OrderItem.Create(1, 80, 120, 2, 150m, [1], "köşe kesim")],
             "user-1",
             currency: currency);

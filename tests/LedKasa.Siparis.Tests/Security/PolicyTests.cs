@@ -21,7 +21,8 @@ public class PolicyTests
     public void Personel_ShouldNotSeeReportsOrAdmin()
     {
         var policies = Policies.ForRole(AppRoles.SiparisPersoneli);
-        policies.Should().Contain(Policies.OrdersCreate);
+        policies.Should().Contain(Policies.OrdersEdit);
+        policies.Should().NotContain(Policies.OrdersCreate);
         policies.Should().NotContain(Policies.OrdersViewPrices);
         policies.Should().NotContain(Policies.ReportsView);
         policies.Should().NotContain(Policies.AdminUsers);

@@ -27,6 +27,7 @@ public class OrderServiceTests
         detail.Items[0].UnitPrice.Should().Be(100);
         detail.Items[0].LineTotal.Should().Be(400);
         detail.Currency.Should().Be(Currency.Try);
+        detail.DeliveryAddress.Should().Be("Fabrika deposu, Organize Sanayi");
         list.Items[0].GrandTotal.Should().Be(400);
         list.Items[0].Currency.Should().Be(Currency.Try);
         list.TotalCount.Should().Be(1);
@@ -93,20 +94,15 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public async Task StaffCreate_ShouldIgnoreSubmittedPrices()
+    public async Task StaffCreate_ShouldBeRejected()
     {
         await using var db = TestDb.Create();
-        var staff = CreateService(db, canViewPrices: false);
-        var draft = Draft("Personel");
-        draft.Currency = Currency.Usd;
-        draft.Items[0].UnitPrice = 999;
+        var staff = CreateService(db, canViewPrices: false, canCreateOrders: false);
 
-        var id = await staff.CreateAsync(draft);
-        var stored = await db.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == id);
-
-        stored.Currency.Should().Be(Currency.Try);
-        stored.GrandTotal.Should().Be(0);
-        stored.Items.Single().UnitPrice.Should().Be(0);
+        var act = async () => await staff.CreateAsync(Draft("Personel"));
+        await act.Should().ThrowAsync<DomainException>()
+            .WithMessage("*oluşturma yetkiniz yok*");
+        db.Orders.Should().BeEmpty();
     }
 
     [Fact]
@@ -117,7 +113,7 @@ public class OrderServiceTests
         var createdId = await admin.CreateAsync(Draft("Korunan"));
         var created = await admin.GetAsync(createdId);
 
-        var staff = CreateService(db, canViewPrices: false);
+        var staff = CreateService(db, canViewPrices: false, canCreateOrders: false);
         var draft = Draft("Korunan");
         draft.Items[0].Id = created!.Items[0].Id;
         draft.Items[0].Quantity = 2;
@@ -133,8 +129,11 @@ public class OrderServiceTests
         stored.GrandTotal.Should().Be(200);
     }
 
-    private static OrderService CreateService(LedKasa.Siparis.Data.ApplicationDbContext db, bool canViewPrices = true)
-        => new(db, new TestCurrentUser { CanViewPrices = canViewPrices }, new OrderDraftValidator());
+    private static OrderService CreateService(
+        LedKasa.Siparis.Data.ApplicationDbContext db,
+        bool canViewPrices = true,
+        bool canCreateOrders = true)
+        => new(db, new TestCurrentUser { CanViewPrices = canViewPrices, CanCreateOrders = canCreateOrders }, new OrderDraftValidator());
 
     private static OrderDraft Draft(string name) => new()
     {
@@ -142,6 +141,7 @@ public class OrderServiceTests
         OrderDate = new DateOnly(2026, 9, 10),
         DeliveryDate = new DateOnly(2026, 9, 12),
         DeliveryPlace = DeliveryPlace.Fabrika,
+        DeliveryAddress = "Fabrika deposu, Organize Sanayi",
         Items =
         [
             new OrderItemInput
