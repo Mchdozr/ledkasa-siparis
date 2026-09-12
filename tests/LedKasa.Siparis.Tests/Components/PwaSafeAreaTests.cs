@@ -9,7 +9,8 @@ public class PwaSafeAreaTests
     {
         var css = File.ReadAllText(FindAppCss());
         css.Should().Contain("safe-area-inset-top");
-        css.Should().Contain("--lk-appbar-height");
+        css.Should().Contain("display-mode: standalone");
+        css.Should().Contain("html.lk-standalone");
         css.Should().Contain("padding-top: var(--lk-safe-top)");
     }
 

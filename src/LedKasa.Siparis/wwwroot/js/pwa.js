@@ -2,6 +2,10 @@ window.ledkasaPwa = (function () {
     let deferredPrompt = null;
 
     const isDev = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const standalone = window.matchMedia("(display-mode: standalone)").matches
+        || window.navigator.standalone === true;
+    if (standalone)
+        document.documentElement.classList.add("lk-standalone");
 
     window.addEventListener("pageshow", event => {
         if (event.persisted)
