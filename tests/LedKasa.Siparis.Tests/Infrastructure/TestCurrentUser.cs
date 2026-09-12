@@ -8,4 +8,5 @@ internal sealed class TestCurrentUser : ICurrentUser
     public string UserId { get; init; } = "user-1";
     public string? DisplayName { get; init; } = "Test";
     public string? UserName { get; init; } = "test@ledkasa.com.tr";
+    public bool CanViewPrices { get; init; } = true;
 }

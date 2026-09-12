@@ -64,6 +64,7 @@ public sealed class OrderService : IOrderService
         }
 
         var total = await query.CountAsync(cancellationToken);
+        var canViewPrices = _currentUser.CanViewPrices;
         var items = await query
             .OrderByDescending(o => o.OrderDate)
             .ThenByDescending(o => o.Id)
@@ -77,11 +78,11 @@ public sealed class OrderService : IOrderService
                 OrderDate = o.OrderDate,
                 DeliveryDate = o.DeliveryDate,
                 DeliveryPlace = o.DeliveryPlace,
-                Currency = o.Currency,
+                Currency = canViewPrices ? o.Currency : Currency.Try,
                 Status = o.Status,
                 ItemCount = o.Items.Count,
                 TotalQuantity = o.Items.Sum(i => i.Quantity),
-                GrandTotal = o.GrandTotal
+                GrandTotal = canViewPrices ? o.GrandTotal : 0
             })
             .ToListAsync(cancellationToken);
 
@@ -112,7 +113,7 @@ public sealed class OrderService : IOrderService
     {
         await _validator.ValidateAndThrowAsync(draft, cancellationToken);
 
-        var items = draft.Items.Select(ToItem).ToList();
+        var items = draft.Items.Select(input => ToItem(ApplyPricePolicy(input))).ToList();
         var number = await NextNumberAsync(draft.OrderDate, cancellationToken);
         var order = Order.Create(
             number,
@@ -123,7 +124,7 @@ public sealed class OrderService : IOrderService
             items,
             _currentUser.UserId,
             draft.Notes,
-            currency: draft.Currency);
+            currency: ApplyCurrencyPolicy(draft.Currency));
 
         _db.Orders.Add(order);
         AddAudit("OrderCreated", "Order", number, $"Müşteri: {order.CustomerName}");
@@ -137,18 +138,19 @@ public sealed class OrderService : IOrderService
 
         var order = await LoadTrackedAsync(id, cancellationToken);
         _db.Entry(order).Property(x => x.RowVersion).OriginalValue = rowVersion;
+        var existingPrices = order.Items.ToDictionary(i => i.Id, i => i.UnitPrice);
 
         order.UpdateHeader(
             draft.CustomerName,
             draft.OrderDate,
             draft.DeliveryDate,
             draft.DeliveryPlace,
-            draft.Currency,
+            ApplyCurrencyPolicy(draft.Currency, order.Currency),
             draft.Notes,
             _currentUser.UserId);
 
         _db.OrderItems.RemoveRange(order.Items);
-        order.ReplaceItems(draft.Items.Select(ToItem), _currentUser.UserId);
+        order.ReplaceItems(draft.Items.Select(input => ToItem(ApplyPricePolicy(input, existingPrices))), _currentUser.UserId);
 
         AddAudit("OrderUpdated", "Order", order.Id.ToString(), order.OrderNumber);
         await _db.SaveChangesAsync(cancellationToken);
@@ -193,6 +195,20 @@ public sealed class OrderService : IOrderService
     private static OrderItem ToItem(OrderItemInput input) =>
         OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.UnitPrice, input.ExtraFeatureIds, input.Note);
 
+    private Currency ApplyCurrencyPolicy(Currency requested, Currency? existing = null) =>
+        _currentUser.CanViewPrices ? requested : existing ?? Currency.Try;
+
+    private OrderItemInput ApplyPricePolicy(OrderItemInput input, IReadOnlyDictionary<int, decimal>? existingPrices = null)
+    {
+        if (_currentUser.CanViewPrices)
+            return input;
+
+        input.UnitPrice = input.Id != 0 && existingPrices is not null && existingPrices.TryGetValue(input.Id, out var price)
+            ? price
+            : 0;
+        return input;
+    }
+
     private void AddAudit(string action, string entityType, string entityId, string? details)
     {
         _db.AuditLogs.Add(new AuditLog
@@ -206,41 +222,45 @@ public sealed class OrderService : IOrderService
         });
     }
 
-    private static OrderDetailDto MapDetail(Order order) => new()
+    private OrderDetailDto MapDetail(Order order)
     {
-        Id = order.Id,
-        OrderNumber = order.OrderNumber,
-        CustomerName = order.CustomerName,
-        OrderDate = order.OrderDate,
-        DeliveryDate = order.DeliveryDate,
-        DeliveryPlace = order.DeliveryPlace,
-        Currency = order.Currency,
-        Status = order.Status,
-        Notes = order.Notes,
-        CreatedByUserId = order.CreatedByUserId,
-        CreatedAtUtc = order.CreatedAtUtc,
-        UpdatedAtUtc = order.UpdatedAtUtc,
-        RowVersion = order.RowVersion,
-        GrandTotal = order.GrandTotal,
-        CanEdit = order.CanEditDetails,
-        AllowedNextStatuses = OrderStatusTransitions.AllowedFrom(order.Status),
-        Items = order.Items.Select(i => new OrderItemDto
+        var canViewPrices = _currentUser.CanViewPrices;
+        return new()
         {
-            Id = i.Id,
-            ProductId = i.ProductId,
-            ProductName = i.Product?.Name ?? string.Empty,
-            WidthCm = i.WidthCm,
-            HeightCm = i.HeightCm,
-            Quantity = i.Quantity,
-            UnitPrice = i.UnitPrice,
-            LineTotal = i.LineTotal,
-            Note = i.Note,
-            ExtraFeatureIds = i.ExtraFeatures.Select(f => f.ExtraFeatureId).ToList(),
-            ExtraFeatureNames = i.ExtraFeatures
-                .Select(f => f.ExtraFeature?.Name)
-                .Where(n => !string.IsNullOrWhiteSpace(n))
-                .Cast<string>()
-                .ToList()
-        }).ToList()
-    };
+            Id = order.Id,
+            OrderNumber = order.OrderNumber,
+            CustomerName = order.CustomerName,
+            OrderDate = order.OrderDate,
+            DeliveryDate = order.DeliveryDate,
+            DeliveryPlace = order.DeliveryPlace,
+            Currency = canViewPrices ? order.Currency : Currency.Try,
+            Status = order.Status,
+            Notes = order.Notes,
+            CreatedByUserId = order.CreatedByUserId,
+            CreatedAtUtc = order.CreatedAtUtc,
+            UpdatedAtUtc = order.UpdatedAtUtc,
+            RowVersion = order.RowVersion,
+            GrandTotal = canViewPrices ? order.GrandTotal : 0,
+            CanEdit = order.CanEditDetails,
+            AllowedNextStatuses = OrderStatusTransitions.AllowedFrom(order.Status),
+            Items = order.Items.Select(i => new OrderItemDto
+            {
+                Id = i.Id,
+                ProductId = i.ProductId,
+                ProductName = i.Product?.Name ?? string.Empty,
+                WidthCm = i.WidthCm,
+                HeightCm = i.HeightCm,
+                Quantity = i.Quantity,
+                UnitPrice = canViewPrices ? i.UnitPrice : 0,
+                LineTotal = canViewPrices ? i.LineTotal : 0,
+                Note = i.Note,
+                ExtraFeatureIds = i.ExtraFeatures.Select(f => f.ExtraFeatureId).ToList(),
+                ExtraFeatureNames = i.ExtraFeatures
+                    .Select(f => f.ExtraFeature?.Name)
+                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                    .Cast<string>()
+                    .ToList()
+            }).ToList()
+        };
+    }
 }

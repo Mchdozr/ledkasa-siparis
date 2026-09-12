@@ -4,6 +4,7 @@ namespace LedKasa.Siparis.Features.Orders;
 
 public sealed class OrderItemInput
 {
+    public int Id { get; set; }
     public int ProductId { get; set; } = 1;
     public decimal WidthCm { get; set; }
     public decimal HeightCm { get; set; }

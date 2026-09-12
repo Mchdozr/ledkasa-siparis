@@ -3,6 +3,7 @@ using FluentValidation;
 using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Tests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace LedKasa.Siparis.Tests.Orders;
 
@@ -74,8 +75,66 @@ public class OrderServiceTests
         updated!.Status.Should().Be(OrderStatus.Onaylandi);
     }
 
-    private static OrderService CreateService(LedKasa.Siparis.Data.ApplicationDbContext db)
-        => new(db, new TestCurrentUser(), new OrderDraftValidator());
+    [Fact]
+    public async Task Staff_ShouldNotSeePrices_OnGetAndList()
+    {
+        await using var db = TestDb.Create();
+        var admin = CreateService(db);
+        var id = await admin.CreateAsync(Draft("Gizli Fiyat"));
+        var staff = CreateService(db, canViewPrices: false);
+
+        var detail = await staff.GetAsync(id);
+        var list = await staff.ListAsync(new OrderListFilter());
+
+        detail!.GrandTotal.Should().Be(0);
+        detail.Items[0].UnitPrice.Should().Be(0);
+        detail.Items[0].LineTotal.Should().Be(0);
+        list.Items[0].GrandTotal.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task StaffCreate_ShouldIgnoreSubmittedPrices()
+    {
+        await using var db = TestDb.Create();
+        var staff = CreateService(db, canViewPrices: false);
+        var draft = Draft("Personel");
+        draft.Currency = Currency.Usd;
+        draft.Items[0].UnitPrice = 999;
+
+        var id = await staff.CreateAsync(draft);
+        var stored = await db.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == id);
+
+        stored.Currency.Should().Be(Currency.Try);
+        stored.GrandTotal.Should().Be(0);
+        stored.Items.Single().UnitPrice.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task StaffUpdate_ShouldKeepExistingPrices()
+    {
+        await using var db = TestDb.Create();
+        var admin = CreateService(db);
+        var createdId = await admin.CreateAsync(Draft("Korunan"));
+        var created = await admin.GetAsync(createdId);
+
+        var staff = CreateService(db, canViewPrices: false);
+        var draft = Draft("Korunan");
+        draft.Items[0].Id = created!.Items[0].Id;
+        draft.Items[0].Quantity = 2;
+        draft.Items[0].UnitPrice = 1;
+        draft.Currency = Currency.Eur;
+
+        await staff.UpdateAsync(createdId, draft, created.RowVersion);
+
+        var stored = await db.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == createdId);
+        stored.Currency.Should().Be(Currency.Try);
+        stored.Items.Single().UnitPrice.Should().Be(100);
+        stored.Items.Single().Quantity.Should().Be(2);
+        stored.GrandTotal.Should().Be(200);
+    }
+
+    private static OrderService CreateService(LedKasa.Siparis.Data.ApplicationDbContext db, bool canViewPrices = true)
+        => new(db, new TestCurrentUser { CanViewPrices = canViewPrices }, new OrderDraftValidator());
 
     private static OrderDraft Draft(string name) => new()
     {

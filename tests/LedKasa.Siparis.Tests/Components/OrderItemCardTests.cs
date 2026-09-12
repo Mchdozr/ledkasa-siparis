@@ -43,4 +43,29 @@ public class OrderItemCardTests : TestContext
         cut.Markup.Should().Contain("15,00 $ × 2 = 30,00 $");
         cut.Markup.Should().Contain("Köşe kesim");
     }
+
+    [Fact]
+    public void ShouldHideMoney_WhenShowPricesFalse()
+    {
+        var item = new OrderItemDto
+        {
+            WidthCm = 80,
+            HeightCm = 120,
+            Quantity = 2,
+            UnitPrice = 15,
+            LineTotal = 30,
+            ProductName = "CNC LED Kasa"
+        };
+
+        var cut = RenderComponent<OrderItemCard>(p => p
+            .Add(x => x.Item, item)
+            .Add(x => x.Currency, Currency.Usd)
+            .Add(x => x.ShowPrices, false));
+
+        cut.Markup.Should().Contain("CNC LED Kasa");
+        cut.Markup.Should().Contain("80 × 120 cm");
+        cut.Markup.Should().NotContain("Fiyat");
+        cut.Markup.Should().NotContain("15,00");
+        cut.Markup.Should().NotContain("$");
+    }
 }

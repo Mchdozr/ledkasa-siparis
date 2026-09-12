@@ -7,6 +7,7 @@
 @inject IProductService ProductsApi
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject ICurrentUser CurrentUser
 
 <PageTitle>@(Id is null ? "Yeni sipariş" : "Sipariş düzenle") — LEDKASA</PageTitle>
 
@@ -26,13 +27,16 @@
                     <MudSelectItem Value="DeliveryPlace.Fabrika">Fabrika</MudSelectItem>
                 </MudSelect>
             </MudItem>
-            <MudItem xs="12" md="3">
-                <MudSelect T="Currency" @bind-Value="_draft.Currency" Label="Para birimi" Variant="Variant.Outlined">
-                    <MudSelectItem Value="Currency.Try">TL (₺)</MudSelectItem>
-                    <MudSelectItem Value="Currency.Usd">USD ($)</MudSelectItem>
-                    <MudSelectItem Value="Currency.Eur">EUR (€)</MudSelectItem>
-                </MudSelect>
-            </MudItem>
+            @if (CurrentUser.CanViewPrices)
+            {
+                <MudItem xs="12" md="3">
+                    <MudSelect T="Currency" @bind-Value="_draft.Currency" Label="Para birimi" Variant="Variant.Outlined">
+                        <MudSelectItem Value="Currency.Try">TL (₺)</MudSelectItem>
+                        <MudSelectItem Value="Currency.Usd">USD ($)</MudSelectItem>
+                        <MudSelectItem Value="Currency.Eur">EUR (€)</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            }
             <MudItem xs="6" md="3">
                 <MudDatePicker Date="_orderDate" DateChanged="OnOrderDate" Label="Sipariş tarihi" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
             </MudItem>
@@ -67,10 +71,13 @@
                     <span>Adet</span>
                     <strong>@item.Quantity</strong>
                 </div>
-                <div class="lk-item-line">
-                    <span>Fiyat</span>
-                    <strong>@TurkeyTime.FormatMoneyLine(item.UnitPrice, item.Quantity, item.LineTotal, _draft.Currency)</strong>
-                </div>
+                @if (CurrentUser.CanViewPrices)
+                {
+                    <div class="lk-item-line">
+                        <span>Fiyat</span>
+                        <strong>@TurkeyTime.FormatMoneyLine(item.UnitPrice, item.Quantity, item.LineTotal, _draft.Currency)</strong>
+                    </div>
+                }
             </div>
             <MudGrid Spacing="3">
                 <MudItem xs="12" md="6">
@@ -94,14 +101,17 @@
                 <MudItem xs="6" md="2">
                     <MudNumericField T="int" @bind-Value="item.Quantity" Label="Adet" Variant="Variant.Outlined" Min="1" Immediate="true" />
                 </MudItem>
-                <MudItem xs="6" md="2">
-                    <MudNumericField T="decimal" @bind-Value="item.UnitPrice" Label="@($"Birim fiyat ({DisplayNames.Currency(_draft.Currency)})")" Variant="Variant.Outlined"
-                                    Min="0m" Step="0.01m" HideSpinButtons="true" Immediate="true"
-                                    Format="N2" Culture="TurkeyTime.Culture" />
-                </MudItem>
-                <MudItem xs="6" md="2" Class="d-flex align-center">
-                    <MudText>Kalem: @TurkeyTime.FormatMoney(item.LineTotal, _draft.Currency)</MudText>
-                </MudItem>
+                @if (CurrentUser.CanViewPrices)
+                {
+                    <MudItem xs="6" md="2">
+                        <MudNumericField T="decimal" @bind-Value="item.UnitPrice" Label="@($"Birim fiyat ({DisplayNames.Currency(_draft.Currency)})")" Variant="Variant.Outlined"
+                                        Min="0m" Step="0.01m" HideSpinButtons="true" Immediate="true"
+                                        Format="N2" Culture="TurkeyTime.Culture" />
+                    </MudItem>
+                    <MudItem xs="6" md="2" Class="d-flex align-center">
+                        <MudText>Kalem: @TurkeyTime.FormatMoney(item.LineTotal, _draft.Currency)</MudText>
+                    </MudItem>
+                }
                 <MudItem xs="12" md="4">
                     <MudSelect T="int" MultiSelection="true" @bind-SelectedValues="item.ExtraFeatureIds" Label="Ekstra özellik"
                                Variant="Variant.Outlined" MultiSelectionTextFunc="GetFeatureText">
@@ -120,9 +130,12 @@
 
     <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddItem" Class="mb-4">Kalem ekle</MudButton>
 
-    <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
-        <MudText Typo="Typo.h6">Sipariş toplamı: @TurkeyTime.FormatMoney(_draft.GrandTotal, _draft.Currency)</MudText>
-    </MudPaper>
+    @if (CurrentUser.CanViewPrices)
+    {
+        <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
+            <MudText Typo="Typo.h6">Sipariş toplamı: @TurkeyTime.FormatMoney(_draft.GrandTotal, _draft.Currency)</MudText>
+        </MudPaper>
+    }
 
     <div class="lk-actions">
         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Kaydet</MudButton>
@@ -171,6 +184,7 @@
         _draft.Notes = existing.Notes;
         _draft.Items = existing.Items.Select(i => new OrderItemInput
         {
+            Id = i.Id,
             ProductId = i.ProductId,
             WidthCm = i.WidthCm,
             HeightCm = i.HeightCm,

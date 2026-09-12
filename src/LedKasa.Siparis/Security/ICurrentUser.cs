@@ -1,3 +1,5 @@
+using LedKasa.Siparis.Identity;
+
 namespace LedKasa.Siparis.Security;
 
 public interface ICurrentUser
@@ -6,6 +8,7 @@ public interface ICurrentUser
     string UserId { get; }
     string? DisplayName { get; }
     string? UserName { get; }
+    bool CanViewPrices { get; }
 }
 
 public sealed class CurrentUser : ICurrentUser
@@ -23,4 +26,14 @@ public sealed class CurrentUser : ICurrentUser
     public string? DisplayName => _http.HttpContext?.User.FindFirst("display_name")?.Value
         ?? _http.HttpContext?.User.Identity?.Name;
     public string? UserName => _http.HttpContext?.User.Identity?.Name;
+
+    public bool CanViewPrices
+    {
+        get
+        {
+            var user = _http.HttpContext?.User;
+            return user is not null &&
+                   (user.IsInRole(AppRoles.Yonetici) || user.IsInRole(AppRoles.Muhasebe));
+        }
+    }
 }
