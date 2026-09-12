@@ -1,10 +1,25 @@
-<MudPaper Class="@($"lk-card lk-stat {(Tone == "warn" ? "warn" : "")}")" Elevation="0">
-    <MudIcon Icon="@Icon" Color="@(Tone == "warn" ? Color.Warning : Color.Secondary)" />
-    <div>
-        <small>@Title</small>
-        <strong>@(string.IsNullOrWhiteSpace(Text) ? Value.ToString() : Text)</strong>
-    </div>
-</MudPaper>
+@if (string.IsNullOrWhiteSpace(Href))
+{
+    <MudPaper Class="@CardClass" Elevation="0">
+        <MudIcon Icon="@Icon" Color="@(Tone == "warn" ? Color.Warning : Color.Secondary)" />
+        <div>
+            <small>@Title</small>
+            <strong>@(string.IsNullOrWhiteSpace(Text) ? Value.ToString() : Text)</strong>
+        </div>
+    </MudPaper>
+}
+else
+{
+    <a href="@Href" class="lk-stat-link">
+        <MudPaper Class="@CardClass" Elevation="0">
+            <MudIcon Icon="@Icon" Color="@(Tone == "warn" ? Color.Warning : Color.Secondary)" />
+            <div>
+                <small>@Title</small>
+                <strong>@(string.IsNullOrWhiteSpace(Text) ? Value.ToString() : Text)</strong>
+            </div>
+        </MudPaper>
+    </a>
+}
 
 @code {
     [Parameter] public string Title { get; set; } = string.Empty;
@@ -12,4 +27,7 @@
     [Parameter] public string? Text { get; set; }
     [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Insights;
     [Parameter] public string Tone { get; set; } = "default";
+    [Parameter] public string? Href { get; set; }
+
+    private string CardClass => $"lk-card lk-stat {(Tone == "warn" ? "warn" : "")}";
 }

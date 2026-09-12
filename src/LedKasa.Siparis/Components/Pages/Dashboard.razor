@@ -15,10 +15,10 @@
 else
 {
     <MudGrid Spacing="3">
-        <MudItem xs="6" md="3"><StatCard Title="Bugün" Value="@_snapshot.TodayCount" Icon="@Icons.Material.Filled.Today" /></MudItem>
-        <MudItem xs="6" md="3"><StatCard Title="Açık sipariş" Value="@_snapshot.OpenCount" Icon="@Icons.Material.Filled.PendingActions" /></MudItem>
-        <MudItem xs="6" md="3"><StatCard Title="Bu hafta teslim" Value="@_snapshot.WeekDeliveryCount" Icon="@Icons.Material.Filled.LocalShipping" /></MudItem>
-        <MudItem xs="6" md="3"><StatCard Title="Geciken" Value="@_snapshot.OverdueCount" Tone="warn" Icon="@Icons.Material.Filled.WarningAmber" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Bugün" Value="@_snapshot.TodayCount" Icon="@Icons.Material.Filled.Today" Href="@($"/orders?scope={OrderScopes.TodayQuery}")" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Açık sipariş" Value="@_snapshot.OpenCount" Icon="@Icons.Material.Filled.PendingActions" Href="@($"/orders?scope={OrderScopes.OpenQuery}")" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Bu hafta teslim" Value="@_snapshot.WeekDeliveryCount" Icon="@Icons.Material.Filled.LocalShipping" Href="@($"/orders?scope={OrderScopes.WeekQuery}")" /></MudItem>
+        <MudItem xs="6" md="3"><StatCard Title="Geciken" Value="@_snapshot.OverdueCount" Tone="warn" Icon="@Icons.Material.Filled.WarningAmber" Href="@($"/orders?scope={OrderScopes.OverdueQuery}")" /></MudItem>
     </MudGrid>
 
     <MudGrid Spacing="3" Class="mt-2">

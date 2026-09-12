@@ -10,7 +10,7 @@
 <div class="lk-toolbar">
     <div>
         <h1 class="lk-page-title">Siparişler</h1>
-        <p class="lk-page-sub">Filtreleyin, detaya gidin, süreci ilerletin.</p>
+        <p class="lk-page-sub">@(string.IsNullOrEmpty(_scopeLabel) ? "Filtreleyin, detaya gidin, süreci ilerletin." : _scopeLabel)</p>
     </div>
     <AuthorizeView Policy="@Policies.OrdersCreate">
         <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="/orders/new"
@@ -52,7 +52,7 @@
             <MudDatePicker @bind-Date="_from" Label="Başlangıç" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
         </MudItem>
         <MudItem xs="6" md="2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-1" OnClick="SearchAsync">Uygula</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-1" OnClick="ApplyFiltersAsync">Uygula</MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -141,23 +141,29 @@ else if (_result is not null)
     [SupplyParameterFromQuery(Name = "status")]
     public int? StatusQuery { get; set; }
 
+    [SupplyParameterFromQuery(Name = "scope")]
+    public string? ScopeQuery { get; set; }
+
     private int? _appliedStatusQuery;
+    private string? _appliedScopeQuery;
     private bool _queryApplied;
+    private string _scopeLabel = string.Empty;
 
     protected override Task OnParametersSetAsync()
     {
-        if (_queryApplied && _appliedStatusQuery == StatusQuery)
+        if (_queryApplied && _appliedStatusQuery == StatusQuery && _appliedScopeQuery == ScopeQuery)
             return Task.CompletedTask;
 
-        if (StatusQuery is int value && Enum.IsDefined(typeof(OrderStatus), value))
-            _filter.Status = (OrderStatus)value;
-        else if (StatusQuery is null)
-            _filter.Status = null;
-
+        OrderScopes.ApplyQuery(_filter, StatusQuery, ScopeQuery);
+        _from = null;
+        _scopeLabel = OrderScopes.Display(_filter.Scope);
         _appliedStatusQuery = StatusQuery;
+        _appliedScopeQuery = ScopeQuery;
         _queryApplied = true;
-        return SearchAsync();
+        return SearchAsync(keepScope: true);
     }
+
+    private Task ApplyFiltersAsync() => SearchAsync();
 
     private async Task OnSearchKey(KeyboardEventArgs e)
     {
@@ -168,11 +174,17 @@ else if (_result is not null)
     private Task OnSortChanged(OrderSort sort)
     {
         _filter.Sort = sort;
-        return SearchAsync();
+        return SearchAsync(keepScope: true);
     }
 
-    private async Task SearchAsync()
+    private async Task SearchAsync(bool keepScope = false)
     {
+        if (!keepScope)
+        {
+            _filter.Scope = OrderListScope.None;
+            _scopeLabel = string.Empty;
+        }
+
         _loading = true;
         _filter.From = _from is null ? null : DateOnly.FromDateTime(_from.Value);
         _filter.Page = 1;

@@ -1,5 +1,6 @@
 using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Data;
+using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,11 +26,6 @@ public interface IDashboardService
 
 public sealed class DashboardService : IDashboardService
 {
-    private static readonly OrderStatus[] OpenStatuses =
-    [
-        OrderStatus.Yeni, OrderStatus.Onaylandi, OrderStatus.Uretimde, OrderStatus.Hazir
-    ];
-
     private readonly ApplicationDbContext _db;
 
     public DashboardService(ApplicationDbContext db)
@@ -40,16 +36,12 @@ public sealed class DashboardService : IDashboardService
     public async Task<DashboardSnapshot> GetAsync(CancellationToken cancellationToken = default)
     {
         var today = TurkeyTime.Today;
-        var week = ReportPeriodCalculatorRange(today);
+        var orders = _db.Orders.AsQueryable();
 
-        var todayCount = await _db.Orders.CountAsync(o => o.OrderDate == today, cancellationToken);
-        var openCount = await _db.Orders.CountAsync(o => OpenStatuses.Contains(o.Status), cancellationToken);
-        var weekDeliveryCount = await _db.Orders.CountAsync(
-            o => o.DeliveryDate >= week.From && o.DeliveryDate <= week.To && o.Status != OrderStatus.Iptal,
-            cancellationToken);
-        var overdueCount = await _db.Orders.CountAsync(
-            o => o.DeliveryDate < today && OpenStatuses.Contains(o.Status),
-            cancellationToken);
+        var todayCount = await OrderScopes.Apply(orders, OrderListScope.Today, today).CountAsync(cancellationToken);
+        var openCount = await OrderScopes.Apply(orders, OrderListScope.Open, today).CountAsync(cancellationToken);
+        var weekDeliveryCount = await OrderScopes.Apply(orders, OrderListScope.WeekDelivery, today).CountAsync(cancellationToken);
+        var overdueCount = await OrderScopes.Apply(orders, OrderListScope.Overdue, today).CountAsync(cancellationToken);
 
         var statusCounts = await _db.Orders
             .GroupBy(o => o.Status)
@@ -57,7 +49,7 @@ public sealed class DashboardService : IDashboardService
             .ToListAsync(cancellationToken);
 
         var upcoming = await _db.Orders
-            .Where(o => o.DeliveryDate >= today && OpenStatuses.Contains(o.Status))
+            .Where(o => o.DeliveryDate >= today && OrderScopes.Open.Contains(o.Status))
             .OrderBy(o => o.DeliveryDate)
             .Take(8)
             .Select(o => new UpcomingDelivery(o.Id, o.OrderNumber, o.CustomerName, o.DeliveryDate, o.DeliveryPlace, o.Status))
@@ -73,7 +65,4 @@ public sealed class DashboardService : IDashboardService
             Upcoming = upcoming
         };
     }
-
-    private static (DateOnly From, DateOnly To) ReportPeriodCalculatorRange(DateOnly today)
-        => Features.Reports.ReportPeriodCalculator.GetRange(Features.Reports.ReportPeriod.Weekly, today);
 }

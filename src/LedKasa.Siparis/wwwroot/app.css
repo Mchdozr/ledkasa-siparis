@@ -109,6 +109,17 @@ html, body {
     font-size: 1.6rem;
 }
 
+a.lk-stat-link {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+}
+
+a.lk-stat-link:hover .lk-stat {
+    background: rgba(11, 31, 58, 0.03);
+}
+
 .lk-toolbar,
 .lk-actions,
 .lk-status-row,

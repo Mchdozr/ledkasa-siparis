@@ -1,4 +1,5 @@
 using FluentValidation;
+using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Audit;
 using LedKasa.Siparis.Features.Orders.Domain;
@@ -42,26 +43,33 @@ public sealed class OrderService : IOrderService
             query = query.Where(o => o.OrderNumber.Contains(term) || o.CustomerName.Contains(term));
         }
 
-        if (filter.Status.HasValue)
-            query = query.Where(o => o.Status == filter.Status.Value);
-
-        if (filter.DeliveryPlace.HasValue)
-            query = query.Where(o => o.DeliveryPlace == filter.DeliveryPlace.Value);
-
-        if (filter.DateField == ReportDateFieldKind.DeliveryDate)
+        if (filter.Scope != OrderListScope.None)
         {
-            if (filter.From.HasValue)
-                query = query.Where(o => o.DeliveryDate >= filter.From.Value);
-            if (filter.To.HasValue)
-                query = query.Where(o => o.DeliveryDate <= filter.To.Value);
+            query = OrderScopes.Apply(query, filter.Scope, TurkeyTime.Today);
         }
         else
         {
-            if (filter.From.HasValue)
-                query = query.Where(o => o.OrderDate >= filter.From.Value);
-            if (filter.To.HasValue)
-                query = query.Where(o => o.OrderDate <= filter.To.Value);
+            if (filter.Status.HasValue)
+                query = query.Where(o => o.Status == filter.Status.Value);
+
+            if (filter.DateField == ReportDateFieldKind.DeliveryDate)
+            {
+                if (filter.From.HasValue)
+                    query = query.Where(o => o.DeliveryDate >= filter.From.Value);
+                if (filter.To.HasValue)
+                    query = query.Where(o => o.DeliveryDate <= filter.To.Value);
+            }
+            else
+            {
+                if (filter.From.HasValue)
+                    query = query.Where(o => o.OrderDate >= filter.From.Value);
+                if (filter.To.HasValue)
+                    query = query.Where(o => o.OrderDate <= filter.To.Value);
+            }
         }
+
+        if (filter.DeliveryPlace.HasValue)
+            query = query.Where(o => o.DeliveryPlace == filter.DeliveryPlace.Value);
 
         var total = await query.CountAsync(cancellationToken);
         var canViewPrices = _currentUser.CanViewPrices;

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using FluentValidation;
+using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Tests.Infrastructure;
@@ -144,11 +145,58 @@ public class OrderServiceTests
         (await Names(service, OrderSort.FarthestDelivery)).Should().Equal("Eski", "Orta", "Yeni");
     }
 
-    private static async Task<string[]> Names(OrderService service, OrderSort sort)
+    [Fact]
+    public async Task List_ShouldApplyDashboardScopes()
     {
-        var list = await service.ListAsync(new OrderListFilter { Sort = sort });
+        await using var db = TestDb.Create();
+        var service = CreateService(db);
+        var today = TurkeyTime.Today;
+        var week = LedKasa.Siparis.Features.Reports.ReportPeriodCalculator.GetRange(
+            LedKasa.Siparis.Features.Reports.ReportPeriod.Weekly, today);
+
+        await service.CreateAsync(Draft("Bugun", today, today.AddDays(10)));
+        await service.CreateAsync(Draft("DunAcik", today.AddDays(-1), week.To));
+        var teslimId = await service.CreateAsync(Draft("Teslim", week.From, week.From));
+        await MoveTo(service, teslimId, OrderStatus.TeslimEdildi);
+        var gecikenId = await service.CreateAsync(Draft("Geciken", week.From.AddDays(-10), week.From.AddDays(-1)));
+        await MoveTo(service, gecikenId, OrderStatus.Onaylandi);
+        var iptalId = await service.CreateAsync(Draft("IptalHafta", week.From, week.From));
+        await MoveTo(service, iptalId, OrderStatus.Iptal);
+
+        (await Names(service, scope: OrderListScope.Today)).Should().Equal("Bugun");
+        (await Names(service, scope: OrderListScope.Open)).Should().BeEquivalentTo("Bugun", "DunAcik", "Geciken");
+        (await Names(service, scope: OrderListScope.WeekDelivery)).Should().BeEquivalentTo("DunAcik", "Teslim");
+        (await Names(service, scope: OrderListScope.Overdue)).Should().Equal("Geciken");
+    }
+
+    private static async Task<string[]> Names(OrderService service, OrderSort sort = OrderSort.NewestFirst, OrderListScope scope = OrderListScope.None)
+    {
+        var list = await service.ListAsync(new OrderListFilter { Sort = sort, Scope = scope });
         return list.Items.Select(x => x.CustomerName).ToArray();
     }
+
+    private static async Task MoveTo(OrderService service, int id, OrderStatus target)
+    {
+        foreach (var next in PathTo(target))
+        {
+            var current = await service.GetAsync(id);
+            await service.ChangeStatusAsync(id, next, current!.RowVersion);
+        }
+    }
+
+    private static IEnumerable<OrderStatus> PathTo(OrderStatus target) => target switch
+    {
+        OrderStatus.Yeni => [],
+        OrderStatus.Onaylandi => [OrderStatus.Onaylandi],
+        OrderStatus.Uretimde => [OrderStatus.Onaylandi, OrderStatus.Uretimde],
+        OrderStatus.Hazir => [OrderStatus.Onaylandi, OrderStatus.Uretimde, OrderStatus.Hazir],
+        OrderStatus.TeslimEdildi =>
+        [
+            OrderStatus.Onaylandi, OrderStatus.Uretimde, OrderStatus.Hazir, OrderStatus.TeslimEdildi
+        ],
+        OrderStatus.Iptal => [OrderStatus.Iptal],
+        _ => throw new ArgumentOutOfRangeException(nameof(target), target, null)
+    };
 
     private static OrderService CreateService(
         LedKasa.Siparis.Data.ApplicationDbContext db,

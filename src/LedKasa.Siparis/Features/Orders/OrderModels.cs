@@ -40,6 +40,7 @@ public sealed class OrderListFilter
     public DateOnly? To { get; set; }
     public ReportDateFieldKind DateField { get; set; } = ReportDateFieldKind.OrderDate;
     public OrderSort Sort { get; set; } = OrderSort.NewestFirst;
+    public OrderListScope Scope { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
 }
