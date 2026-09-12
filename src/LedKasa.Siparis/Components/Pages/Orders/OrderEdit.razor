@@ -118,20 +118,6 @@
         </MudPaper>
     }
 
-    <AuthorizeView Policy="@Policies.AdminFeatures" Context="auth">
-        <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
-            <MudText Typo="Typo.subtitle1" Class="mb-2">Yeni ürün ekle</MudText>
-            <MudGrid Spacing="2">
-                <MudItem xs="12" md="8">
-                    <MudTextField @bind-Value="_newProductName" Label="Ürün adı" Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-1" OnClick="AddProductAsync">Kataloğa ekle</MudButton>
-                </MudItem>
-            </MudGrid>
-        </MudPaper>
-    </AuthorizeView>
-
     <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddItem" Class="mb-4">Kalem ekle</MudButton>
 
     <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
@@ -157,7 +143,6 @@
     private DateTime? _deliveryDate;
     private IReadOnlyList<ExtraFeatureDto> _features = [];
     private IReadOnlyList<ProductDto> _products = [];
-    private string _newProductName = string.Empty;
     private DateTime _rowVersion;
     private bool _saving;
 
@@ -214,23 +199,6 @@
     }
 
     private void AddItem() => _draft.Items.Add(new OrderItemInput { ProductId = _products.FirstOrDefault()?.Id ?? 1 });
-
-    private async Task AddProductAsync()
-    {
-        try
-        {
-            var id = await ProductsApi.CreateAsync(_newProductName);
-            _newProductName = string.Empty;
-            _products = await ProductsApi.ListAsync(activeOnly: true);
-            if (_draft.Items.Count > 0)
-                _draft.Items[^1].ProductId = id;
-            Snackbar.Add("Ürün eklendi.", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add(ex.Message, Severity.Error);
-        }
-    }
 
     private void RemoveItem(int index) => _draft.Items.RemoveAt(index);
 
