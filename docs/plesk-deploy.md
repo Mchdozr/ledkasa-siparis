@@ -33,7 +33,7 @@ Ortam değişkenleri (Plesk .NET Core → Düzenle):
 - `SEED__ADMINPASSWORD` = ilk yönetici şifresi
 - `Seed__AdminEmail` = `admin@ledkasa.com.tr`
 - `Telegram__BotToken` = BotFather token
-- `Telegram__ChatId` = bildirim gidecek chat id
+- `Telegram__ChatId` = bildirim gidecek chat id (grup için `-100...`; gruba `/id` yazınca bot gösterir)
 - `Telegram__AppUrl` = `https://siparis.ledkasa.com.tr`
 
 Parolaları repoya yazmayın.

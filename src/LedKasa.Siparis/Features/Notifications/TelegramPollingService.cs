@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.Extensions.Options;
 
 namespace LedKasa.Siparis.Features.Notifications;
@@ -30,7 +29,7 @@ public sealed class TelegramPollingService : BackgroundService
         var client = _httpFactory.CreateClient("telegram-bot");
         _recipients.Remember(_options.TrimmedChatId);
         if (_recipients.Current(_options.TrimmedChatId) is { } configuredChat)
-            await SendTextAsync(client, configuredChat, TelegramCommands.StartReply, stoppingToken);
+            await SendTextAsync(client, configuredChat, TelegramCommands.ReadyReply(configuredChat), stoppingToken);
 
         var offset = 0L;
 
@@ -71,28 +70,14 @@ public sealed class TelegramPollingService : BackgroundService
 
     private async Task<long> HandleUpdatesAsync(HttpClient client, string json, long offset, CancellationToken stoppingToken)
     {
-        using var doc = JsonDocument.Parse(json);
-        if (!doc.RootElement.TryGetProperty("result", out var result) || result.ValueKind != JsonValueKind.Array)
-            return offset;
-
-        foreach (var update in result.EnumerateArray())
+        foreach (var signal in TelegramUpdateReader.Read(json))
         {
-            if (update.TryGetProperty("update_id", out var id))
-                offset = Math.Max(offset, id.GetInt64() + 1);
-
-            if (!update.TryGetProperty("message", out var message))
-                continue;
-
-            var text = message.TryGetProperty("text", out var textEl) ? textEl.GetString() : null;
-            if (!TelegramCommands.IsStart(text))
-                continue;
-
-            var chatId = message.GetProperty("chat").GetProperty("id").GetRawText();
-            _recipients.Remember(chatId);
-            await SendTextAsync(client, chatId, TelegramCommands.StartReply, stoppingToken);
+            _recipients.Remember(signal.ChatId);
+            _logger.LogInformation("Telegram chat id alındı: {ChatId}", signal.ChatId);
+            await SendTextAsync(client, signal.ChatId, TelegramCommands.ReadyReply(signal.ChatId), stoppingToken);
         }
 
-        return offset;
+        return TelegramUpdateReader.NextOffset(json, offset);
     }
 
     private async Task SendTextAsync(HttpClient client, string chatId, string text, CancellationToken stoppingToken)
