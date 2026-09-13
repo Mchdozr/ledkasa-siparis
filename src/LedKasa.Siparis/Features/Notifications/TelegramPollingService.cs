@@ -29,10 +29,7 @@ public sealed class TelegramPollingService : BackgroundService
 
         var client = _httpFactory.CreateClient("telegram-bot");
         _recipients.Remember(_options.TrimmedChatId);
-        if (_recipients.Current(_options.TrimmedChatId) is { } configuredChat)
-            await SendTextAsync(client, configuredChat, TelegramCommands.StartReply, stoppingToken);
-
-        var offset = 0L;
+        var offset = await ConfirmPendingAsync(client, stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -90,6 +87,53 @@ public sealed class TelegramPollingService : BackgroundService
             var chatId = message.GetProperty("chat").GetProperty("id").GetRawText();
             _recipients.Remember(chatId);
             await SendTextAsync(client, chatId, TelegramCommands.StartReply, stoppingToken);
+        }
+
+        return offset;
+    }
+
+    private async Task<long> ConfirmPendingAsync(HttpClient client, CancellationToken stoppingToken)
+    {
+        var offset = 0L;
+        try
+        {
+            for (var i = 0; i < 10; i++)
+            {
+                var url = $"/bot{_options.TrimmedToken}/getUpdates?timeout=0&offset={offset}&limit=100";
+                using var response = await client.GetAsync(url, stoppingToken);
+                var json = await response.Content.ReadAsStringAsync(stoppingToken);
+                if (!response.IsSuccessStatusCode)
+                    return offset;
+
+                var next = NextOffset(json, offset);
+                if (next == offset)
+                    return offset;
+
+                offset = next;
+            }
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Telegram bekleyen güncellemeler atlanamadı");
+        }
+
+        return offset;
+    }
+
+    private static long NextOffset(string json, long offset)
+    {
+        using var doc = JsonDocument.Parse(json);
+        if (!doc.RootElement.TryGetProperty("result", out var result) || result.ValueKind != JsonValueKind.Array)
+            return offset;
+
+        foreach (var update in result.EnumerateArray())
+        {
+            if (update.TryGetProperty("update_id", out var id))
+                offset = Math.Max(offset, id.GetInt64() + 1);
         }
 
         return offset;
