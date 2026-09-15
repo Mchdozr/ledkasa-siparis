@@ -133,7 +133,6 @@ if (!app.Environment.IsEnvironment("Testing"))
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await db.Database.MigrateAsync();
     await IdentitySeeder.SeedAsync(app.Services, app.Configuration, app.Logger);
-    await DemoOrderSeeder.SeedAsync(app.Services, app.Logger);
 }
 
 app.Run();
