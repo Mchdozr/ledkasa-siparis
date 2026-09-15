@@ -19,11 +19,11 @@ public sealed class PdfReportExporter : IPdfReportExporter
     private static readonly XPen RowLine = new(XColor.FromArgb(0xE0, 0xE0, 0xE0), 0.5);
     private static readonly XPen AccentLine = new(XColor.FromArgb(0xF4, 0x6F, 0x2C), 1);
 
-    private static readonly float[] ColumnWeights = [1.15f, 1.7f, 0.85f, 0.85f, 0.7f, 0.85f, 0.45f, 0.45f, 0.85f, 2.3f];
+    private static readonly float[] ColumnWeights = [1.2f, 1.8f, 0.9f, 0.9f, 0.75f, 0.9f, 0.5f, 0.5f, 2.55f];
     private static readonly string[] Headers =
     [
         "Sipariş No", "Sipariş Veren", "Sipariş", "Teslim", "Yer",
-        "Durum", "Kalem", "Adet", "Tutar", "Ölçüler"
+        "Durum", "Kalem", "Adet", "Ölçüler"
     ];
 
     static PdfReportExporter()
@@ -71,7 +71,7 @@ public sealed class PdfReportExporter : IPdfReportExporter
             gfx.DrawString(report.Title, metaFont, TextBrush, new XPoint(margin, y));
             y += 13;
             gfx.DrawString(
-                $"Sipariş: {report.OrderCount}  ·  Kalem: {report.ItemCount}  ·  Adet: {report.TotalQuantity}  ·  Tutar: {report.FormattedGrandTotal}",
+                $"Sipariş: {report.OrderCount}  ·  Kalem: {report.ItemCount}  ·  Adet: {report.TotalQuantity}",
                 cellFont, TextBrush, new XPoint(margin, y));
             y += 8;
             gfx.DrawLine(AccentLine, margin, y, page.Width - margin, y);
@@ -103,7 +103,6 @@ public sealed class PdfReportExporter : IPdfReportExporter
                 row.Status,
                 row.ItemCount.ToString(),
                 row.TotalQuantity.ToString(),
-                TurkeyTime.FormatMoney(row.GrandTotal),
                 row.ItemSummary
             };
 

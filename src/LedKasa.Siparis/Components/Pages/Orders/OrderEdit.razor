@@ -63,13 +63,6 @@
                     <span>Adet</span>
                     <strong>@item.Quantity</strong>
                 </div>
-                @if (CurrentUser.CanViewPrices)
-                {
-                    <div class="lk-item-line">
-                        <span>Tutar</span>
-                        <strong>@TurkeyTime.FormatMoney(item.LineTotal)</strong>
-                    </div>
-                }
             </div>
             <MudGrid Spacing="3">
                 <MudItem xs="12" md="6">
@@ -93,14 +86,6 @@
                 <MudItem xs="6" md="2">
                     <MudNumericField T="int" @bind-Value="item.Quantity" Label="Adet" Variant="Variant.Outlined" Min="1" Immediate="true" />
                 </MudItem>
-                @if (CurrentUser.CanViewPrices)
-                {
-                    <MudItem xs="6" md="3">
-                        <MudNumericField T="decimal" @bind-Value="item.LineTotal" Label="Tutar" Variant="Variant.Outlined"
-                                        Min="0m" Step="0.01m" HideSpinButtons="true" Immediate="true"
-                                        Format="N2" Culture="TurkeyTime.Culture" />
-                    </MudItem>
-                }
                 <MudItem xs="12" md="4">
                     <MudSelect T="int" MultiSelection="true" @bind-SelectedValues="item.ExtraFeatureIds" Label="Ekstra özellik"
                                Variant="Variant.Outlined" MultiSelectionTextFunc="GetFeatureText">
@@ -118,13 +103,6 @@
     }
 
     <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddItem" Class="mb-4">Kalem ekle</MudButton>
-
-    @if (CurrentUser.CanViewPrices)
-    {
-        <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
-            <MudText Typo="Typo.h6">Sipariş toplamı: @TurkeyTime.FormatMoney(_draft.GrandTotal)</MudText>
-        </MudPaper>
-    }
 
     <div class="lk-actions">
         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="_saving">Kaydet</MudButton>
@@ -183,7 +161,6 @@
             WidthCm = i.WidthCm,
             HeightCm = i.HeightCm,
             Quantity = i.Quantity,
-            LineTotal = i.LineTotal,
             ExtraFeatureIds = i.ExtraFeatureIds.ToHashSet(),
             Note = i.Note
         }).ToList();

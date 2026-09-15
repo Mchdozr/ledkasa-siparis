@@ -12,7 +12,7 @@ public class PolicyTests
         Policies.ForRole(AppRoles.Yonetici).Should().Contain(new[]
         {
             Policies.OrdersView, Policies.OrdersCreate, Policies.OrdersEdit,
-            Policies.OrdersChangeStatus, Policies.OrdersViewPrices,
+            Policies.OrdersChangeStatus,
             Policies.ReportsView, Policies.AdminUsers, Policies.AdminFeatures
         });
     }
@@ -23,7 +23,6 @@ public class PolicyTests
         var policies = Policies.ForRole(AppRoles.SiparisPersoneli);
         policies.Should().Contain(Policies.OrdersEdit);
         policies.Should().NotContain(Policies.OrdersCreate);
-        policies.Should().NotContain(Policies.OrdersViewPrices);
         policies.Should().NotContain(Policies.ReportsView);
         policies.Should().NotContain(Policies.AdminUsers);
     }
@@ -32,6 +31,6 @@ public class PolicyTests
     public void Muhasebe_ShouldOnlyViewAndReport()
     {
         var policies = Policies.ForRole(AppRoles.Muhasebe);
-        policies.Should().BeEquivalentTo([Policies.OrdersView, Policies.OrdersViewPrices, Policies.ReportsView]);
+        policies.Should().BeEquivalentTo([Policies.OrdersView, Policies.ReportsView]);
     }
 }

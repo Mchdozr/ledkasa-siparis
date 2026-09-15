@@ -11,7 +11,6 @@ public sealed class OrderItem
     public decimal WidthCm { get; private set; }
     public decimal HeightCm { get; private set; }
     public int Quantity { get; private set; }
-    public decimal LineTotal { get; private set; }
     public string? Note { get; private set; }
     public IReadOnlyCollection<OrderItemExtraFeature> ExtraFeatures => _extraFeatures;
 
@@ -24,7 +23,6 @@ public sealed class OrderItem
         decimal widthCm,
         decimal heightCm,
         int quantity,
-        decimal lineTotal,
         IEnumerable<int>? extraFeatureIds = null,
         string? note = null)
     {
@@ -36,8 +34,6 @@ public sealed class OrderItem
             throw new DomainException("Dikey ölçü sıfırdan büyük olmalıdır.");
         if (quantity <= 0)
             throw new DomainException("Adet sıfırdan büyük olmalıdır.");
-        if (lineTotal < 0)
-            throw new DomainException("Tutar negatif olamaz.");
 
         var item = new OrderItem
         {
@@ -45,7 +41,6 @@ public sealed class OrderItem
             WidthCm = decimal.Round(widthCm, 2, MidpointRounding.AwayFromZero),
             HeightCm = decimal.Round(heightCm, 2, MidpointRounding.AwayFromZero),
             Quantity = quantity,
-            LineTotal = decimal.Round(lineTotal, 2, MidpointRounding.AwayFromZero),
             Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim()
         };
 

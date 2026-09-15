@@ -9,7 +9,6 @@ public static class Policies
     public const string OrdersCreate = "Orders.Create";
     public const string OrdersEdit = "Orders.Edit";
     public const string OrdersChangeStatus = "Orders.ChangeStatus";
-    public const string OrdersViewPrices = "Orders.ViewPrices";
     public const string ReportsView = "Reports.View";
     public const string AdminUsers = "Admin.Users";
     public const string AdminFeatures = "Admin.Features";
@@ -18,7 +17,7 @@ public static class Policies
     {
         AppRoles.Yonetici =>
         [
-            OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus, OrdersViewPrices,
+            OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus,
             ReportsView, AdminUsers, AdminFeatures
         ],
         AppRoles.SiparisPersoneli =>
@@ -27,7 +26,7 @@ public static class Policies
         ],
         AppRoles.Muhasebe =>
         [
-            OrdersView, OrdersViewPrices, ReportsView
+            OrdersView, ReportsView
         ],
         _ => []
     };
@@ -48,7 +47,7 @@ public static class Policies
 
     private static readonly string[] All =
     [
-        OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus, OrdersViewPrices,
+        OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus,
         ReportsView, AdminUsers, AdminFeatures
     ];
 

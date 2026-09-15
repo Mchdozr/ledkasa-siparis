@@ -4,7 +4,6 @@ using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Tests.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 namespace LedKasa.Siparis.Tests.Orders;
 
@@ -24,10 +23,8 @@ public class OrderServiceTests
         id.Should().BeGreaterThan(0);
         detail!.OrderNumber.Should().StartWith("LK-");
         detail.Items.Should().HaveCount(1);
-        detail.GrandTotal.Should().Be(400);
-        detail.Items[0].LineTotal.Should().Be(400);
         detail.DeliveryPlace.Should().Be(DeliveryPlace.Fabrika);
-        list.Items[0].GrandTotal.Should().Be(400);
+        list.Items[0].TotalQuantity.Should().Be(4);
         list.TotalCount.Should().Be(1);
         db.AuditLogs.Should().Contain(a => a.Action == "OrderCreated");
     }
@@ -98,53 +95,15 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public async Task Staff_ShouldNotSeePrices_OnGetAndList()
-    {
-        await using var db = TestDb.Create();
-        var admin = CreateService(db);
-        var id = await admin.CreateAsync(Draft("Gizli Fiyat"));
-        var staff = CreateService(db, canViewPrices: false);
-
-        var detail = await staff.GetAsync(id);
-        var list = await staff.ListAsync(new OrderListFilter());
-
-        detail!.GrandTotal.Should().Be(0);
-        detail.Items[0].LineTotal.Should().Be(0);
-        list.Items[0].GrandTotal.Should().Be(0);
-    }
-
-    [Fact]
     public async Task StaffCreate_ShouldBeRejected()
     {
         await using var db = TestDb.Create();
-        var staff = CreateService(db, canViewPrices: false, canCreateOrders: false);
+        var staff = CreateService(db, canCreateOrders: false);
 
         var act = async () => await staff.CreateAsync(Draft("Personel"));
         await act.Should().ThrowAsync<DomainException>()
             .WithMessage("*oluşturma yetkiniz yok*");
         db.Orders.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task StaffUpdate_ShouldKeepExistingPrices()
-    {
-        await using var db = TestDb.Create();
-        var admin = CreateService(db);
-        var createdId = await admin.CreateAsync(Draft("Korunan"));
-        var created = await admin.GetAsync(createdId);
-
-        var staff = CreateService(db, canViewPrices: false, canCreateOrders: false);
-        var draft = Draft("Korunan");
-        draft.Items[0].Id = created!.Items[0].Id;
-        draft.Items[0].Quantity = 2;
-        draft.Items[0].LineTotal = 1;
-
-        await staff.UpdateAsync(createdId, draft, created.RowVersion);
-
-        var stored = await db.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == createdId);
-        stored.Items.Single().LineTotal.Should().Be(400);
-        stored.Items.Single().Quantity.Should().Be(2);
-        stored.GrandTotal.Should().Be(400);
     }
 
     [Fact]
@@ -217,9 +176,8 @@ public class OrderServiceTests
 
     private static OrderService CreateService(
         LedKasa.Siparis.Data.ApplicationDbContext db,
-        bool canViewPrices = true,
         bool canCreateOrders = true)
-        => new(db, new TestCurrentUser { CanViewPrices = canViewPrices, CanCreateOrders = canCreateOrders }, new OrderDraftValidator(), new NullTelegramNotifier());
+        => new(db, new TestCurrentUser { CanCreateOrders = canCreateOrders }, new OrderDraftValidator(), new NullTelegramNotifier());
 
     private static OrderDraft Draft(string name, DateOnly? orderDate = null, DateOnly? deliveryDate = null) => new()
     {
@@ -235,7 +193,6 @@ public class OrderServiceTests
                 WidthCm = 96,
                 HeightCm = 96,
                 Quantity = 4,
-                LineTotal = 400,
                 ExtraFeatureIds = [1],
                 Note = "rental"
             }

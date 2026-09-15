@@ -12,13 +12,6 @@
             <span>Adet</span>
             <strong>@Item.Quantity</strong>
         </div>
-        @if (ShowPrices)
-        {
-            <div class="lk-item-line">
-                <span>Tutar</span>
-                <strong>@TurkeyTime.FormatMoney(Item.LineTotal)</strong>
-            </div>
-        }
     </div>
     @if (Item.ExtraFeatureNames.Count > 0)
     {
@@ -37,5 +30,4 @@
 
 @code {
     [Parameter, EditorRequired] public OrderItemDto Item { get; set; } = default!;
-    [Parameter] public bool ShowPrices { get; set; } = true;
 }

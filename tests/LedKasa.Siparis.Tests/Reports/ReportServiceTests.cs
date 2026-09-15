@@ -25,15 +25,12 @@ public class ReportServiceTests
         });
 
         report.OrderCount.Should().Be(1);
-        report.GrandTotal.Should().Be(25);
         report.Rows.Single().CustomerName.Should().Be("İçerde");
-        report.Rows.Single().GrandTotal.Should().Be(25);
-        report.FormattedGrandTotal.Should().Be("25,00");
         report.Title.Should().Contain("Haftalık");
     }
 
     [Fact]
-    public async Task Report_ShouldExcludeCancelledFromRevenue()
+    public async Task Report_ShouldExcludeCancelledByDefault()
     {
         await using var db = TestDb.Create();
         var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), new NullTelegramNotifier());
@@ -49,10 +46,8 @@ public class ReportServiceTests
         });
 
         report.OrderCount.Should().Be(1);
-        report.GrandTotal.Should().Be(25);
         report.Rows.Should().ContainSingle(r => r.CustomerName == "Aktif");
         report.Rows.Should().NotContain(r => r.CustomerName == "İptal");
-        report.FormattedGrandTotal.Should().Be("25,00");
     }
 
     [Fact]
@@ -92,7 +87,6 @@ public class ReportServiceTests
         });
 
         report.OrderCount.Should().Be(2);
-        report.GrandTotal.Should().Be(50);
         report.Rows.Select(r => r.CustomerName).Should().BeEquivalentTo(["Aktif", "İptal"]);
     }
 
@@ -119,27 +113,7 @@ public class ReportServiceTests
         var text = book.Worksheet(1).RangeUsed()!.Cells().Select(c => c.GetString()).ToList();
         text.Should().Contain(report.Rows[0].OrderNumber);
         text.Should().Contain("LEDKASA Sipariş Raporu");
-        text.Should().Contain("Tutar");
-        text.Should().Contain("25,00");
-    }
-
-    [Fact]
-    public async Task Excel_ShouldFormatGrandTotal()
-    {
-        await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), new NullTelegramNotifier());
-        await orders.CreateAsync(Draft("Usd", new DateOnly(2026, 9, 10)));
-        var report = await new ReportService(db).GetAsync(new ReportRequest
-        {
-            Period = ReportPeriod.Daily,
-            Anchor = new DateOnly(2026, 9, 10)
-        });
-
-        var excel = new ExcelReportExporter().Export(report);
-        using var book = new XLWorkbook(new MemoryStream(excel));
-        var text = book.Worksheet(1).RangeUsed()!.Cells().Select(c => c.GetString()).ToList();
-        text.Should().Contain("25,00");
-        report.FormattedGrandTotal.Should().Be("25,00");
+        text.Should().NotContain("Tutar");
     }
 
     [Fact]
@@ -151,7 +125,6 @@ public class ReportServiceTests
             OrderCount = 1,
             ItemCount = 2,
             TotalQuantity = 12,
-            FormattedGrandTotal = "1.250,00",
             Rows =
             [
                 new ReportRow
@@ -164,7 +137,6 @@ public class ReportServiceTests
                     Status = "Yeni",
                     ItemCount = 2,
                     TotalQuantity = 12,
-                    GrandTotal = 1250,
                     ItemSummary = "Kapaksız LED Kabinet 50x100 cm x4 · CNC LED Kasa 80x120 cm x8 · Rental LED Kabinet 64x48 cm x20"
                 }
             ]
@@ -181,6 +153,6 @@ public class ReportServiceTests
         OrderDate = date,
         DeliveryDate = date.AddDays(2),
         DeliveryPlace = DeliveryPlace.Sirket,
-        Items = [new OrderItemInput { ProductId = 1, WidthCm = 50, HeightCm = 50, Quantity = 1, LineTotal = 25 }]
+        Items = [new OrderItemInput { ProductId = 1, WidthCm = 50, HeightCm = 50, Quantity = 1 }]
     };
 }

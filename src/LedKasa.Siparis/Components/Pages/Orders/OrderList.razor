@@ -3,7 +3,6 @@
 @rendermode InteractiveServer
 @inject IOrderService Orders
 @inject NavigationManager Navigation
-@inject ICurrentUser CurrentUser
 
 <PageTitle>Siparişler — LEDKASA</PageTitle>
 
@@ -80,10 +79,6 @@ else if (_result is not null)
                 <MudTh>Yer</MudTh>
                 <MudTh>Durum</MudTh>
                 <MudTh>Kalem / Adet</MudTh>
-                @if (CurrentUser.CanViewPrices)
-                {
-                    <MudTh>Tutar</MudTh>
-                }
             </HeaderContent>
             <RowTemplate>
                 <MudTd>
@@ -95,10 +90,6 @@ else if (_result is not null)
                 <MudTd>@DisplayNames.Place(context.DeliveryPlace)</MudTd>
                 <MudTd><StatusChip Status="context.Status" /></MudTd>
                 <MudTd>@context.ItemCount / @context.TotalQuantity</MudTd>
-                @if (CurrentUser.CanViewPrices)
-                {
-                    <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal)</MudTd>
-                }
             </RowTemplate>
         </MudTable>
     </div>
@@ -116,10 +107,6 @@ else if (_result is not null)
                 <div class="lk-item-lines mt-2">
                     <div class="lk-item-line"><span>Kalem</span><strong>@item.ItemCount</strong></div>
                     <div class="lk-item-line"><span>Adet</span><strong>@item.TotalQuantity</strong></div>
-                    @if (CurrentUser.CanViewPrices)
-                    {
-                        <div class="lk-item-line"><span>Tutar</span><strong>@TurkeyTime.FormatMoney(item.GrandTotal)</strong></div>
-                    }
                 </div>
             </MudPaper>
         }

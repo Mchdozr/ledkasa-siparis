@@ -32,7 +32,6 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .IsRequired();
         builder.HasIndex(x => x.Status);
 
-        builder.Property(x => x.GrandTotal).HasPrecision(18, 2);
         builder.Property(x => x.Notes).HasMaxLength(1000);
         builder.Property(x => x.CreatedByUserId).HasMaxLength(450).IsRequired();
         builder.Property(x => x.UpdatedByUserId).HasMaxLength(450);

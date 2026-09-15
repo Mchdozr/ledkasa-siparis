@@ -9,7 +9,6 @@ public sealed class OrderItemInput
     public decimal WidthCm { get; set; }
     public decimal HeightCm { get; set; }
     public int Quantity { get; set; } = 1;
-    public decimal LineTotal { get; set; }
     public IEnumerable<int> ExtraFeatureIds { get; set; } = new HashSet<int>();
     public string? Note { get; set; }
 }
@@ -22,9 +21,6 @@ public sealed class OrderDraft
     public DeliveryPlace DeliveryPlace { get; set; } = DeliveryPlace.Sirket;
     public string? Notes { get; set; }
     public List<OrderItemInput> Items { get; set; } = [new()];
-
-    public decimal GrandTotal =>
-        decimal.Round(Items.Sum(i => i.LineTotal), 2, MidpointRounding.AwayFromZero);
 }
 
 public sealed class OrderListFilter
@@ -58,7 +54,6 @@ public sealed class OrderListItemDto
     public OrderStatus Status { get; init; }
     public int ItemCount { get; init; }
     public int TotalQuantity { get; init; }
-    public decimal GrandTotal { get; init; }
 }
 
 public sealed class PagedResult<T>
@@ -83,7 +78,6 @@ public sealed class OrderDetailDto
     public DateTime CreatedAtUtc { get; init; }
     public DateTime? UpdatedAtUtc { get; init; }
     public DateTime RowVersion { get; init; }
-    public decimal GrandTotal { get; init; }
     public IReadOnlyList<OrderItemDto> Items { get; init; } = [];
     public IReadOnlyList<OrderStatus> AllowedNextStatuses { get; init; } = [];
     public bool CanEdit { get; init; }
@@ -97,7 +91,6 @@ public sealed class OrderItemDto
     public decimal WidthCm { get; init; }
     public decimal HeightCm { get; init; }
     public int Quantity { get; init; }
-    public decimal LineTotal { get; init; }
     public string? Note { get; init; }
     public IReadOnlyList<int> ExtraFeatureIds { get; init; } = [];
     public IReadOnlyList<string> ExtraFeatureNames { get; init; } = [];

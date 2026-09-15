@@ -8,7 +8,6 @@ public interface ICurrentUser
     string UserId { get; }
     string? DisplayName { get; }
     string? UserName { get; }
-    bool CanViewPrices { get; }
     bool CanCreateOrders { get; }
 }
 
@@ -27,16 +26,6 @@ public sealed class CurrentUser : ICurrentUser
     public string? DisplayName => _http.HttpContext?.User.FindFirst("display_name")?.Value
         ?? _http.HttpContext?.User.Identity?.Name;
     public string? UserName => _http.HttpContext?.User.Identity?.Name;
-
-    public bool CanViewPrices
-    {
-        get
-        {
-            var user = _http.HttpContext?.User;
-            return user is not null &&
-                   (user.IsInRole(AppRoles.Yonetici) || user.IsInRole(AppRoles.Muhasebe));
-        }
-    }
 
     public bool CanCreateOrders => _http.HttpContext?.User.IsInRole(AppRoles.Yonetici) == true;
 }

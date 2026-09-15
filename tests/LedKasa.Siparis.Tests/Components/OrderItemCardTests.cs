@@ -16,14 +16,13 @@ public class OrderItemCardTests : TestContext
     }
 
     [Fact]
-    public void ShouldRenderLabeledMeasureQuantityAndMoney()
+    public void ShouldRenderLabeledMeasureAndQuantity()
     {
         var item = new OrderItemDto
         {
             WidthCm = 123,
             HeightCm = 12,
             Quantity = 2,
-            LineTotal = 30,
             ProductName = "CNC LED Kasa",
             ExtraFeatureNames = ["Köşe kesim"],
             Note = "not"
@@ -37,31 +36,8 @@ public class OrderItemCardTests : TestContext
         cut.Markup.Should().Contain("123 × 12 cm");
         cut.Markup.Should().Contain("Adet");
         cut.Markup.Should().Contain(">2<");
-        cut.Markup.Should().Contain("Tutar");
-        cut.Markup.Should().Contain("30,00");
-        cut.Markup.Should().NotContain("15,00 × 2");
         cut.Markup.Should().Contain("Köşe kesim");
-    }
-
-    [Fact]
-    public void ShouldHideMoney_WhenShowPricesFalse()
-    {
-        var item = new OrderItemDto
-        {
-            WidthCm = 80,
-            HeightCm = 120,
-            Quantity = 2,
-            LineTotal = 30,
-            ProductName = "CNC LED Kasa"
-        };
-
-        var cut = RenderComponent<OrderItemCard>(p => p
-            .Add(x => x.Item, item)
-            .Add(x => x.ShowPrices, false));
-
-        cut.Markup.Should().Contain("CNC LED Kasa");
-        cut.Markup.Should().Contain("80 × 120 cm");
         cut.Markup.Should().NotContain("Tutar");
-        cut.Markup.Should().NotContain("30,00");
+        cut.Markup.Should().NotContain("Fiyat");
     }
 }

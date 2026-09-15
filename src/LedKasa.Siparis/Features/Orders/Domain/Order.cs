@@ -17,7 +17,6 @@ public sealed class Order
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
     public string? UpdatedByUserId { get; private set; }
-    public decimal GrandTotal { get; private set; }
     public DateTime RowVersion { get; private set; }
     public IReadOnlyCollection<OrderItem> Items => _items;
 
@@ -131,8 +130,6 @@ public sealed class Order
             item.AttachTo(this);
             _items.Add(item);
         }
-
-        GrandTotal = decimal.Round(_items.Sum(i => i.LineTotal), 2, MidpointRounding.AwayFromZero);
     }
 
     private void Touch(string userId, DateTime? nowUtc)

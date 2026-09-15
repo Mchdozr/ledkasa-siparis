@@ -79,7 +79,6 @@ public sealed class OrderService : IOrderService
             query = query.Where(o => o.DeliveryPlace == filter.DeliveryPlace.Value);
 
         var total = await query.CountAsync(cancellationToken);
-        var canViewPrices = _currentUser.CanViewPrices;
         var items = await ApplySort(query, filter.Sort)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -93,8 +92,7 @@ public sealed class OrderService : IOrderService
                 DeliveryPlace = o.DeliveryPlace,
                 Status = o.Status,
                 ItemCount = o.Items.Count,
-                TotalQuantity = o.Items.Sum(i => i.Quantity),
-                GrandTotal = canViewPrices ? o.GrandTotal : 0
+                TotalQuantity = o.Items.Sum(i => i.Quantity)
             })
             .ToListAsync(cancellationToken);
 
@@ -128,7 +126,7 @@ public sealed class OrderService : IOrderService
 
         await _validator.ValidateAndThrowAsync(draft, cancellationToken);
 
-        var items = draft.Items.Select(input => ToItem(ApplyPricePolicy(input))).ToList();
+        var items = draft.Items.Select(ToItem).ToList();
         var number = await NextNumberAsync(draft.OrderDate, cancellationToken);
         var order = Order.Create(
             number,
@@ -153,7 +151,6 @@ public sealed class OrderService : IOrderService
 
         var order = await LoadTrackedAsync(id, cancellationToken);
         _db.Entry(order).Property(x => x.RowVersion).OriginalValue = rowVersion;
-        var existingTotals = order.Items.ToDictionary(i => i.Id, i => i.LineTotal);
 
         order.UpdateHeader(
             draft.CustomerName,
@@ -164,7 +161,7 @@ public sealed class OrderService : IOrderService
             _currentUser.UserId);
 
         _db.OrderItems.RemoveRange(order.Items);
-        order.ReplaceItems(draft.Items.Select(input => ToItem(ApplyPricePolicy(input, existingTotals))), _currentUser.UserId);
+        order.ReplaceItems(draft.Items.Select(ToItem), _currentUser.UserId);
 
         AddAudit("OrderUpdated", "Order", order.Id.ToString(), order.OrderNumber);
         await _db.SaveChangesAsync(cancellationToken);
@@ -256,18 +253,7 @@ public sealed class OrderService : IOrderService
         };
 
     private static OrderItem ToItem(OrderItemInput input) =>
-        OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.LineTotal, input.ExtraFeatureIds, input.Note);
-
-    private OrderItemInput ApplyPricePolicy(OrderItemInput input, IReadOnlyDictionary<int, decimal>? existingTotals = null)
-    {
-        if (_currentUser.CanViewPrices)
-            return input;
-
-        input.LineTotal = input.Id != 0 && existingTotals is not null && existingTotals.TryGetValue(input.Id, out var total)
-            ? total
-            : 0;
-        return input;
-    }
+        OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.ExtraFeatureIds, input.Note);
 
     private void AddAudit(string action, string entityType, string entityId, string? details)
     {
@@ -284,7 +270,6 @@ public sealed class OrderService : IOrderService
 
     private OrderDetailDto MapDetail(Order order)
     {
-        var canViewPrices = _currentUser.CanViewPrices;
         return new()
         {
             Id = order.Id,
@@ -299,7 +284,6 @@ public sealed class OrderService : IOrderService
             CreatedAtUtc = order.CreatedAtUtc,
             UpdatedAtUtc = order.UpdatedAtUtc,
             RowVersion = order.RowVersion,
-            GrandTotal = canViewPrices ? order.GrandTotal : 0,
             CanEdit = order.CanEditDetails,
             AllowedNextStatuses = OrderStatusTransitions.AllowedFrom(order.Status),
             Items = order.Items.Select(i => new OrderItemDto
@@ -310,7 +294,6 @@ public sealed class OrderService : IOrderService
                 WidthCm = i.WidthCm,
                 HeightCm = i.HeightCm,
                 Quantity = i.Quantity,
-                LineTotal = canViewPrices ? i.LineTotal : 0,
                 Note = i.Note,
                 ExtraFeatureIds = i.ExtraFeatures.Select(f => f.ExtraFeatureId).ToList(),
                 ExtraFeatureNames = i.ExtraFeatures

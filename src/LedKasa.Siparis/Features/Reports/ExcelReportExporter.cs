@@ -18,14 +18,14 @@ public sealed class ExcelReportExporter : IExcelReportExporter
         sheet.Cell(1, 1).Value = "LEDKASA Sipariş Raporu";
         sheet.Cell(1, 1).Style.Font.Bold = true;
         sheet.Cell(1, 1).Style.Font.FontSize = 16;
-        sheet.Range(1, 1, 1, 10).Merge();
+        sheet.Range(1, 1, 1, 9).Merge();
 
         sheet.Cell(2, 1).Value = report.Title;
-        sheet.Range(2, 1, 2, 10).Merge();
-        sheet.Cell(3, 1).Value = $"Sipariş: {report.OrderCount}  |  Kalem: {report.ItemCount}  |  Adet: {report.TotalQuantity}  |  Tutar: {report.FormattedGrandTotal}";
-        sheet.Range(3, 1, 3, 10).Merge();
+        sheet.Range(2, 1, 2, 9).Merge();
+        sheet.Cell(3, 1).Value = $"Sipariş: {report.OrderCount}  |  Kalem: {report.ItemCount}  |  Adet: {report.TotalQuantity}";
+        sheet.Range(3, 1, 3, 9).Merge();
 
-        var headers = new[] { "Sipariş No", "Sipariş Veren", "Sipariş Tarihi", "Teslim Tarihi", "Teslim Yeri", "Durum", "Kalem", "Toplam Adet", "Tutar", "Ölçüler" };
+        var headers = new[] { "Sipariş No", "Sipariş Veren", "Sipariş Tarihi", "Teslim Tarihi", "Teslim Yeri", "Durum", "Kalem", "Toplam Adet", "Ölçüler" };
         for (var i = 0; i < headers.Length; i++)
         {
             var cell = sheet.Cell(5, i + 1);
@@ -46,8 +46,7 @@ public sealed class ExcelReportExporter : IExcelReportExporter
             sheet.Cell(row, 6).Value = item.Status;
             sheet.Cell(row, 7).Value = item.ItemCount;
             sheet.Cell(row, 8).Value = item.TotalQuantity;
-            sheet.Cell(row, 9).Value = TurkeyTime.FormatMoney(item.GrandTotal);
-            sheet.Cell(row, 10).Value = item.ItemSummary;
+            sheet.Cell(row, 9).Value = item.ItemSummary;
             row++;
         }
 

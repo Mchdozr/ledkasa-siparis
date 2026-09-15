@@ -21,8 +21,6 @@ public static class TurkeyTime
 
     public static string FormatDateTime(DateTime utc) => ToTurkey(utc).ToString("dd.MM.yyyy HH:mm");
 
-    public static string FormatMoney(decimal amount) => amount.ToString("N2", Culture);
-
     private static TimeZoneInfo ResolveZone()
     {
         foreach (var id in new[] { "Turkey Standard Time", "Europe/Istanbul" })

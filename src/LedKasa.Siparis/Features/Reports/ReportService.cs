@@ -1,4 +1,3 @@
-using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Orders.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -63,12 +62,9 @@ public sealed class ReportService : IReportService
             Status = DisplayNames.Status(o.Status),
             ItemCount = o.Items.Count,
             TotalQuantity = o.Items.Sum(i => i.Quantity),
-            GrandTotal = o.GrandTotal,
             ItemSummary = string.Join(" · ", o.Items.Select(i =>
                 $"{i.Product?.Name ?? "Ürün"} {i.WidthCm:0.##}x{i.HeightCm:0.##} cm x{i.Quantity}"))
         }).ToList();
-
-        var grandTotal = rows.Sum(r => r.GrandTotal);
 
         return new ReportResult
         {
@@ -78,8 +74,6 @@ public sealed class ReportService : IReportService
             OrderCount = rows.Count,
             ItemCount = rows.Sum(r => r.ItemCount),
             TotalQuantity = rows.Sum(r => r.TotalQuantity),
-            GrandTotal = grandTotal,
-            FormattedGrandTotal = TurkeyTime.FormatMoney(grandTotal),
             Rows = rows
         };
     }

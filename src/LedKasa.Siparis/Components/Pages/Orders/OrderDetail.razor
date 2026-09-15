@@ -4,7 +4,6 @@
 @inject IOrderService Orders
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
-@inject ICurrentUser CurrentUser
 
 <PageTitle>Sipariş detayı — LEDKASA</PageTitle>
 
@@ -41,17 +40,13 @@ else
                     <span>Teslim tarihi</span><strong>@TurkeyTime.FormatDate(_order.DeliveryDate)</strong>
                     <span>Teslim yeri</span><strong>@DisplayNames.Place(_order.DeliveryPlace)</strong>
                     <span>Durum</span><StatusChip Status="_order.Status" />
-                    @if (CurrentUser.CanViewPrices)
-                    {
-                        <span>Toplam</span><strong>@TurkeyTime.FormatMoney(_order.GrandTotal)</strong>
-                    }
                     <span>Not</span><strong>@(_order.Notes ?? "—")</strong>
                 </div>
             </MudPaper>
 
             @foreach (var item in _order.Items)
             {
-                <OrderItemCard Item="item" ShowPrices="CurrentUser.CanViewPrices" />
+                <OrderItemCard Item="item" />
             }
         </MudItem>
         <MudItem xs="12" md="4">

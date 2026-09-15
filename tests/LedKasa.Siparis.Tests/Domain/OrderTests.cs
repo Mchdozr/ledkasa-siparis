@@ -34,7 +34,7 @@ public class OrderTests
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 12),
             (DeliveryPlace)99,
-            [OrderItem.Create(1, 80, 120, 1, 10)],
+            [OrderItem.Create(1, 80, 120, 1)],
             "user-1");
 
         act.Should().Throw<DomainException>().WithMessage("*Teslim yeri*");
@@ -62,26 +62,10 @@ public class OrderTests
     [InlineData(80, 120, 0, "Adet")]
     public void CreateItem_ShouldReject_NonPositiveValues(decimal width, decimal height, int qty, string expected)
     {
-        var act = () => OrderItem.Create(1, width, height, qty, 1);
+        var act = () => OrderItem.Create(1, width, height, qty);
 
         act.Should().Throw<DomainException>()
             .WithMessage($"*{expected}*");
-    }
-
-    [Fact]
-    public void CreateItem_ShouldReject_NegativePrice()
-    {
-        var act = () => OrderItem.Create(1, 80, 120, 1, -1);
-        act.Should().Throw<DomainException>().WithMessage("*Tutar*");
-    }
-
-    [Fact]
-    public void Create_ShouldComputeLineAndGrandTotal()
-    {
-        var order = OrderFactory.Create();
-
-        order.Items.First().LineTotal.Should().Be(300);
-        order.GrandTotal.Should().Be(300);
     }
 
     [Fact]
@@ -179,7 +163,7 @@ internal static class OrderFactory
             order,
             delivery,
             DeliveryPlace.Sirket,
-            [OrderItem.Create(1, 80, 120, 2, 300m, [1], "köşe kesim")],
+            [OrderItem.Create(1, 80, 120, 2, [1], "köşe kesim")],
             "user-1");
     }
 }
