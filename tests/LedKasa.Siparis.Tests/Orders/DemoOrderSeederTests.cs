@@ -54,7 +54,7 @@ public class DemoOrderSeederTests
             new DateOnly(2026, 9, 12),
             new DateOnly(2026, 9, 14),
             DeliveryPlace.Sirket,
-            [OrderItem.Create(1, 50, 50, 1)],
+            [OrderItem.Create(1, 50, 50, 5, 1, PanelSide.TekYon)],
             "admin-1"));
         await db.SaveChangesAsync();
 

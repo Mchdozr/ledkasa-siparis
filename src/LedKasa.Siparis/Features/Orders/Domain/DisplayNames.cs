@@ -28,4 +28,14 @@ public static class DisplayNames
         OrderSort.FarthestDelivery => "En uzak teslim",
         _ => throw new ArgumentOutOfRangeException(nameof(sort), sort, null)
     };
+
+    public static string Side(PanelSide side) => side switch
+    {
+        PanelSide.TekYon => "Tek yön",
+        PanelSide.CiftYon => "Çift yön",
+        _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
+    };
+
+    public static string Size(int widthCm, int heightCm, int depthCm) =>
+        $"{widthCm} × {heightCm} × {depthCm} cm";
 }

@@ -3,7 +3,6 @@
 @attribute [Authorize(Policy = Policies.OrdersEdit)]
 @rendermode InteractiveServer
 @inject IOrderService Orders
-@inject IExtraFeatureService Features
 @inject IProductService ProductsApi
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
@@ -14,7 +13,7 @@
 <PageHeader Title="@(Id is null ? "Yeni sipariş" : "Siparişi düzenle")"
             Parent="@(Id is null ? "Siparişler" : "Sipariş")"
             BackHref="@(Id is null ? "/orders" : $"/orders/{Id}")"
-            Subtitle="Ürün, ölçü, ekstra özellik ve teslim bilgileri." />
+            Subtitle="Ürün, ölçü, yön ve teslim bilgileri." />
 
 <EditForm Model="_draft" OnValidSubmit="SaveAsync">
     <DataAnnotationsValidator />
@@ -57,7 +56,11 @@
             <div class="lk-item-lines mb-3">
                 <div class="lk-item-line">
                     <span>Ölçü</span>
-                    <strong>@item.WidthCm.ToString("0.##", TurkeyTime.Culture) × @item.HeightCm.ToString("0.##", TurkeyTime.Culture) cm</strong>
+                    <strong>@DisplayNames.Size(item.WidthCm, item.HeightCm, item.DepthCm)</strong>
+                </div>
+                <div class="lk-item-line">
+                    <span>Yön</span>
+                    <strong>@DisplayNames.Side(item.Side)</strong>
                 </div>
                 <div class="lk-item-line">
                     <span>Adet</span>
@@ -73,26 +76,26 @@
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="6" md="3">
-                    <MudNumericField T="decimal" @bind-Value="item.WidthCm" Label="Yatay (cm)" Variant="Variant.Outlined"
-                                    Min="0.01m" Step="0.01m" HideSpinButtons="true" Immediate="true"
-                                    Format="N2" Culture="TurkeyTime.Culture" />
+                <MudItem xs="4" md="2">
+                    <MudNumericField T="int" @bind-Value="item.WidthCm" Label="Yatay (cm)" Variant="Variant.Outlined"
+                                    Min="1" HideSpinButtons="true" Immediate="true" Format="0" />
+                </MudItem>
+                <MudItem xs="4" md="2">
+                    <MudNumericField T="int" @bind-Value="item.HeightCm" Label="Dikey (cm)" Variant="Variant.Outlined"
+                                    Min="1" HideSpinButtons="true" Immediate="true" Format="0" />
+                </MudItem>
+                <MudItem xs="4" md="2">
+                    <MudNumericField T="int" @bind-Value="item.DepthCm" Label="Derinlik / Kalınlık (cm)" Variant="Variant.Outlined"
+                                    Min="1" HideSpinButtons="true" Immediate="true" Format="0" />
                 </MudItem>
                 <MudItem xs="6" md="3">
-                    <MudNumericField T="decimal" @bind-Value="item.HeightCm" Label="Dikey (cm)" Variant="Variant.Outlined"
-                                    Min="0.01m" Step="0.01m" HideSpinButtons="true" Immediate="true"
-                                    Format="N2" Culture="TurkeyTime.Culture" />
+                    <MudNumericField T="int" @bind-Value="item.Quantity" Label="Adet" Variant="Variant.Outlined"
+                                    Min="1" HideSpinButtons="true" Immediate="true" Format="0" />
                 </MudItem>
-                <MudItem xs="6" md="2">
-                    <MudNumericField T="int" @bind-Value="item.Quantity" Label="Adet" Variant="Variant.Outlined" Min="1" Immediate="true" />
-                </MudItem>
-                <MudItem xs="12" md="4">
-                    <MudSelect T="int" MultiSelection="true" @bind-SelectedValues="item.ExtraFeatureIds" Label="Ekstra özellik"
-                               Variant="Variant.Outlined" MultiSelectionTextFunc="GetFeatureText">
-                        @foreach (var feature in _features)
-                        {
-                            <MudSelectItem T="int" Value="@feature.Id">@feature.Name</MudSelectItem>
-                        }
+                <MudItem xs="6" md="3">
+                    <MudSelect T="PanelSide" @bind-Value="item.Side" Label="Yön" Variant="Variant.Outlined">
+                        <MudSelectItem Value="PanelSide.TekYon">Tek yön</MudSelectItem>
+                        <MudSelectItem Value="PanelSide.CiftYon">Çift yön</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12">
@@ -121,7 +124,6 @@
 
     private DateTime? _orderDate;
     private DateTime? _deliveryDate;
-    private IReadOnlyList<ExtraFeatureDto> _features = [];
     private IReadOnlyList<ProductDto> _products = [];
     private DateTime _rowVersion;
     private bool _saving;
@@ -134,7 +136,6 @@
             return;
         }
 
-        _features = await Features.ListAsync(activeOnly: true);
         _products = await ProductsApi.ListAsync(activeOnly: true);
         _orderDate = _draft.OrderDate.ToDateTime(TimeOnly.MinValue);
         _deliveryDate = _draft.DeliveryDate.ToDateTime(TimeOnly.MinValue);
@@ -160,8 +161,9 @@
             ProductId = i.ProductId,
             WidthCm = i.WidthCm,
             HeightCm = i.HeightCm,
+            DepthCm = i.DepthCm,
             Quantity = i.Quantity,
-            ExtraFeatureIds = i.ExtraFeatureIds.ToHashSet(),
+            Side = i.Side,
             Note = i.Note
         }).ToList();
         _rowVersion = existing.RowVersion;
@@ -186,9 +188,6 @@
     private void AddItem() => _draft.Items.Add(new OrderItemInput { ProductId = _products.FirstOrDefault()?.Id ?? 1 });
 
     private void RemoveItem(int index) => _draft.Items.RemoveAt(index);
-
-    private string GetFeatureText(List<string> selected)
-        => selected.Count == 0 ? "Seçiniz" : string.Join(", ", _features.Where(f => selected.Contains(f.Id.ToString())).Select(f => f.Name));
 
     private async Task SaveAsync()
     {

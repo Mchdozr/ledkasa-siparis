@@ -23,6 +23,8 @@ public class OrderServiceTests
         id.Should().BeGreaterThan(0);
         detail!.OrderNumber.Should().StartWith("LK-");
         detail.Items.Should().HaveCount(1);
+        detail.Items[0].DepthCm.Should().Be(5);
+        detail.Items[0].Side.Should().Be(PanelSide.TekYon);
         detail.DeliveryPlace.Should().Be(DeliveryPlace.Fabrika);
         list.Items[0].TotalQuantity.Should().Be(4);
         list.TotalCount.Should().Be(1);
@@ -30,26 +32,19 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public async Task Create_ShouldNotifyTelegram()
+    public async Task Create_ShouldPersistDepthAndCiftYon()
     {
         await using var db = TestDb.Create();
-        var telegram = new RecordingTelegramNotifier();
-        var service = new OrderService(
-            db,
-            new TestCurrentUser { DisplayName = "Admin" },
-            new OrderDraftValidator(),
-            telegram);
+        var service = CreateService(db);
+        var draft = Draft("Çift yön");
+        draft.Items[0].DepthCm = 8;
+        draft.Items[0].Side = PanelSide.CiftYon;
 
-        var id = await service.CreateAsync(Draft("Ayşe Kaya"));
+        var id = await service.CreateAsync(draft);
+        var detail = await service.GetAsync(id);
 
-        telegram.CallCount.Should().Be(1);
-        telegram.Last.Should().NotBeNull();
-        telegram.Last!.Id.Should().Be(id);
-        telegram.Last.CustomerName.Should().Be("Ayşe Kaya");
-        telegram.Last.CreatedBy.Should().Be("Admin");
-        telegram.Last.Lines.Should().ContainSingle();
-        telegram.Last.Lines[0].ProductName.Should().Be("Rental LED Kabinet");
-        telegram.Last.Lines[0].Extras.Should().Contain("Köşe kesim");
+        detail!.Items[0].DepthCm.Should().Be(8);
+        detail.Items[0].Side.Should().Be(PanelSide.CiftYon);
     }
 
     [Fact]
@@ -177,7 +172,7 @@ public class OrderServiceTests
     private static OrderService CreateService(
         LedKasa.Siparis.Data.ApplicationDbContext db,
         bool canCreateOrders = true)
-        => new(db, new TestCurrentUser { CanCreateOrders = canCreateOrders }, new OrderDraftValidator(), new NullTelegramNotifier());
+        => new(db, new TestCurrentUser { CanCreateOrders = canCreateOrders }, new OrderDraftValidator());
 
     private static OrderDraft Draft(string name, DateOnly? orderDate = null, DateOnly? deliveryDate = null) => new()
     {
@@ -193,7 +188,6 @@ public class OrderServiceTests
                 WidthCm = 96,
                 HeightCm = 96,
                 Quantity = 4,
-                ExtraFeatureIds = [1],
                 Note = "rental"
             }
         ]

@@ -6,10 +6,11 @@ public sealed class OrderItemInput
 {
     public int Id { get; set; }
     public int ProductId { get; set; } = 1;
-    public decimal WidthCm { get; set; }
-    public decimal HeightCm { get; set; }
+    public int WidthCm { get; set; }
+    public int HeightCm { get; set; }
+    public int DepthCm { get; set; } = 5;
     public int Quantity { get; set; } = 1;
-    public IEnumerable<int> ExtraFeatureIds { get; set; } = new HashSet<int>();
+    public PanelSide Side { get; set; } = PanelSide.TekYon;
     public string? Note { get; set; }
 }
 
@@ -88,10 +89,10 @@ public sealed class OrderItemDto
     public int Id { get; init; }
     public int ProductId { get; init; }
     public string ProductName { get; init; } = string.Empty;
-    public decimal WidthCm { get; init; }
-    public decimal HeightCm { get; init; }
+    public int WidthCm { get; init; }
+    public int HeightCm { get; init; }
+    public int DepthCm { get; init; }
     public int Quantity { get; init; }
+    public PanelSide Side { get; init; }
     public string? Note { get; init; }
-    public IReadOnlyList<int> ExtraFeatureIds { get; init; } = [];
-    public IReadOnlyList<string> ExtraFeatureNames { get; init; } = [];
 }

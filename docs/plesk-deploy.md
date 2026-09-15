@@ -32,9 +32,6 @@ Ortam değişkenleri (Plesk .NET Core → Düzenle):
 - `ConnectionStrings__DefaultConnection` = `Server=localhost;Port=3306;Database=ledkasa_siparis;User=ledkasa_siparis;Password=...`
 - `SEED__ADMINPASSWORD` = ilk yönetici şifresi
 - `Seed__AdminEmail` = `admin@ledkasa.com.tr`
-- `Telegram__BotToken` = BotFather token
-- `Telegram__ChatId` = bildirim gidecek chat id
-- `Telegram__AppUrl` = `https://siparis.ledkasa.com.tr`
 
 Parolaları repoya yazmayın.
 

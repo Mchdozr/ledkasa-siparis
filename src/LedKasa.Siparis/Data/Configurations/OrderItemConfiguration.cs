@@ -16,16 +16,10 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .WithMany()
             .HasForeignKey(x => x.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.Property(x => x.WidthCm).HasPrecision(10, 2);
-        builder.Property(x => x.HeightCm).HasPrecision(10, 2);
+        builder.Property(x => x.WidthCm).IsRequired();
+        builder.Property(x => x.HeightCm).IsRequired();
+        builder.Property(x => x.DepthCm).IsRequired();
+        builder.Property(x => x.Side).IsRequired();
         builder.Property(x => x.Note).HasMaxLength(400);
-
-        builder.HasMany(x => x.ExtraFeatures)
-            .WithOne(x => x.OrderItem)
-            .HasForeignKey(x => x.OrderItemId)
-            .OnDelete(DeleteBehavior.Cascade);
-        builder.Navigation(x => x.ExtraFeatures)
-            .HasField("_extraFeatures")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

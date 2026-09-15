@@ -6,22 +6,17 @@
         </div>
         <div class="lk-item-line">
             <span>Ölçü</span>
-            <strong>@Item.WidthCm.ToString("0.##", TurkeyTime.Culture) × @Item.HeightCm.ToString("0.##", TurkeyTime.Culture) cm</strong>
+            <strong>@DisplayNames.Size(Item.WidthCm, Item.HeightCm, Item.DepthCm)</strong>
+        </div>
+        <div class="lk-item-line">
+            <span>Yön</span>
+            <strong>@DisplayNames.Side(Item.Side)</strong>
         </div>
         <div class="lk-item-line">
             <span>Adet</span>
             <strong>@Item.Quantity</strong>
         </div>
     </div>
-    @if (Item.ExtraFeatureNames.Count > 0)
-    {
-        <div class="mt-3">
-            @foreach (var name in Item.ExtraFeatureNames)
-            {
-                <MudChip T="string" Size="Size.Small">@name</MudChip>
-            }
-        </div>
-    }
     @if (!string.IsNullOrWhiteSpace(Item.Note))
     {
         <MudText Typo="Typo.caption" Class="mt-2">@Item.Note</MudText>

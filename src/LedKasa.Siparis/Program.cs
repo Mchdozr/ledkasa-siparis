@@ -4,7 +4,6 @@ using LedKasa.Siparis.Components;
 using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Catalog;
 using LedKasa.Siparis.Features.Dashboard;
-using LedKasa.Siparis.Features.Notifications;
 using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Features.Reports;
@@ -83,18 +82,10 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddAuthorization(options => options.AddAppPolicies());
 
-builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection(TelegramOptions.Section));
-builder.Services.AddSingleton<TelegramRecipientHub>();
-builder.Services.AddHttpClient<ITelegramNotifier, TelegramNotifier>(client =>
-{
-    client.BaseAddress = new Uri("https://api.telegram.org/");
-    client.Timeout = TimeSpan.FromSeconds(8);
-});
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<IExtraFeatureService, ExtraFeatureService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IUserAdminService, UserAdminService>();
 builder.Services.AddSingleton<IExcelReportExporter, ExcelReportExporter>();

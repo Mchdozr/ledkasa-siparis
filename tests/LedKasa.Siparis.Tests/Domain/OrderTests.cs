@@ -34,7 +34,7 @@ public class OrderTests
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 12),
             (DeliveryPlace)99,
-            [OrderItem.Create(1, 80, 120, 1)],
+            [OrderItem.Create(1, 80, 120, 5, 1, PanelSide.TekYon)],
             "user-1");
 
         act.Should().Throw<DomainException>().WithMessage("*Teslim yeri*");
@@ -57,15 +57,33 @@ public class OrderTests
     }
 
     [Theory]
-    [InlineData(0, 120, 1, "Yatay")]
-    [InlineData(80, 0, 1, "Dikey")]
-    [InlineData(80, 120, 0, "Adet")]
-    public void CreateItem_ShouldReject_NonPositiveValues(decimal width, decimal height, int qty, string expected)
+    [InlineData(0, 120, 5, 1, "Yatay")]
+    [InlineData(80, 0, 5, 1, "Dikey")]
+    [InlineData(80, 120, 0, 1, "Derinlik")]
+    [InlineData(80, 120, 5, 0, "Adet")]
+    public void CreateItem_ShouldReject_NonPositiveValues(int width, int height, int depth, int qty, string expected)
     {
-        var act = () => OrderItem.Create(1, width, height, qty);
+        var act = () => OrderItem.Create(1, width, height, depth, qty, PanelSide.TekYon);
 
         act.Should().Throw<DomainException>()
             .WithMessage($"*{expected}*");
+    }
+
+    [Fact]
+    public void CreateItem_ShouldReject_InvalidSide()
+    {
+        var act = () => OrderItem.Create(1, 80, 120, 5, 1, (PanelSide)99);
+
+        act.Should().Throw<DomainException>().WithMessage("*Yön*");
+    }
+
+    [Fact]
+    public void CreateItem_ShouldDefaultToFiveCmDepthAndTekYon_WhenFactoryUsesThose()
+    {
+        var item = OrderItem.Create(1, 80, 120, 5, 2, PanelSide.TekYon);
+
+        item.DepthCm.Should().Be(5);
+        item.Side.Should().Be(PanelSide.TekYon);
     }
 
     [Fact]
@@ -76,6 +94,9 @@ public class OrderTests
         order.Status.Should().Be(OrderStatus.Yeni);
         order.Items.Should().HaveCount(1);
         order.Items.First().WidthCm.Should().Be(80);
+        order.Items.First().HeightCm.Should().Be(120);
+        order.Items.First().DepthCm.Should().Be(5);
+        order.Items.First().Side.Should().Be(PanelSide.TekYon);
     }
 
     [Fact]
@@ -163,7 +184,7 @@ internal static class OrderFactory
             order,
             delivery,
             DeliveryPlace.Sirket,
-            [OrderItem.Create(1, 80, 120, 2, [1], "köşe kesim")],
+            [OrderItem.Create(1, 80, 120, 5, 2, PanelSide.TekYon, "köşe kesim")],
             "user-1");
     }
 }

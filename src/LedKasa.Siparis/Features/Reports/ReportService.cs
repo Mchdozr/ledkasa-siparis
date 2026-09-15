@@ -63,7 +63,7 @@ public sealed class ReportService : IReportService
             ItemCount = o.Items.Count,
             TotalQuantity = o.Items.Sum(i => i.Quantity),
             ItemSummary = string.Join(" · ", o.Items.Select(i =>
-                $"{i.Product?.Name ?? "Ürün"} {i.WidthCm:0.##}x{i.HeightCm:0.##} cm x{i.Quantity}"))
+                $"{i.Product?.Name ?? "Ürün"} {i.WidthCm}x{i.HeightCm}x{i.DepthCm} cm {DisplayNames.Side(i.Side)} x{i.Quantity}"))
         }).ToList();
 
         return new ReportResult
