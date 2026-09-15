@@ -17,10 +17,9 @@ public class TelegramMessageFormatterTests
             new DateOnly(2026, 9, 20),
             DeliveryPlace.Fabrika,
             "acele",
-            400,
             "Admin",
             [
-                new TelegramOrderLine("Rental LED Kabinet", 96, 96, 4, 100, 400, "rental", ["Köşe kesim"])
+                new TelegramOrderLine("Rental LED Kabinet", 96, 96, 4, "rental", ["Köşe kesim"])
             ]);
 
         var text = TelegramMessageFormatter.FormatOrderCreated(notice, "https://siparis.ledkasa.com.tr");

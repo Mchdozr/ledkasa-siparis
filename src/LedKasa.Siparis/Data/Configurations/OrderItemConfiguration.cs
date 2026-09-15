@@ -18,8 +18,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .OnDelete(DeleteBehavior.Restrict);
         builder.Property(x => x.WidthCm).HasPrecision(10, 2);
         builder.Property(x => x.HeightCm).HasPrecision(10, 2);
-        builder.Property(x => x.UnitPrice).HasPrecision(18, 2);
-        builder.Ignore(x => x.LineTotal);
+        builder.Property(x => x.LineTotal).HasPrecision(18, 2);
         builder.Property(x => x.Note).HasMaxLength(400);
 
         builder.HasMany(x => x.ExtraFeatures)

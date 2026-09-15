@@ -15,8 +15,8 @@
         @if (ShowPrices)
         {
             <div class="lk-item-line">
-                <span>Fiyat</span>
-                <strong>@TurkeyTime.FormatMoneyLine(Item.UnitPrice, Item.Quantity, Item.LineTotal)</strong>
+                <span>Tutar</span>
+                <strong>@TurkeyTime.FormatMoney(Item.LineTotal)</strong>
             </div>
         }
     </div>

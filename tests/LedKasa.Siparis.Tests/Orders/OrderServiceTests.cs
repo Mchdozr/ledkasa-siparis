@@ -25,7 +25,6 @@ public class OrderServiceTests
         detail!.OrderNumber.Should().StartWith("LK-");
         detail.Items.Should().HaveCount(1);
         detail.GrandTotal.Should().Be(400);
-        detail.Items[0].UnitPrice.Should().Be(100);
         detail.Items[0].LineTotal.Should().Be(400);
         detail.DeliveryPlace.Should().Be(DeliveryPlace.Fabrika);
         list.Items[0].GrandTotal.Should().Be(400);
@@ -110,7 +109,6 @@ public class OrderServiceTests
         var list = await staff.ListAsync(new OrderListFilter());
 
         detail!.GrandTotal.Should().Be(0);
-        detail.Items[0].UnitPrice.Should().Be(0);
         detail.Items[0].LineTotal.Should().Be(0);
         list.Items[0].GrandTotal.Should().Be(0);
     }
@@ -139,14 +137,14 @@ public class OrderServiceTests
         var draft = Draft("Korunan");
         draft.Items[0].Id = created!.Items[0].Id;
         draft.Items[0].Quantity = 2;
-        draft.Items[0].UnitPrice = 1;
+        draft.Items[0].LineTotal = 1;
 
         await staff.UpdateAsync(createdId, draft, created.RowVersion);
 
         var stored = await db.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == createdId);
-        stored.Items.Single().UnitPrice.Should().Be(100);
+        stored.Items.Single().LineTotal.Should().Be(400);
         stored.Items.Single().Quantity.Should().Be(2);
-        stored.GrandTotal.Should().Be(200);
+        stored.GrandTotal.Should().Be(400);
     }
 
     [Fact]
@@ -237,7 +235,7 @@ public class OrderServiceTests
                 WidthCm = 96,
                 HeightCm = 96,
                 Quantity = 4,
-                UnitPrice = 100,
+                LineTotal = 400,
                 ExtraFeatureIds = [1],
                 Note = "rental"
             }

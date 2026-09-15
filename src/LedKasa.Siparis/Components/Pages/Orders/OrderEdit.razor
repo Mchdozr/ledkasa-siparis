@@ -66,8 +66,8 @@
                 @if (CurrentUser.CanViewPrices)
                 {
                     <div class="lk-item-line">
-                        <span>Fiyat</span>
-                        <strong>@TurkeyTime.FormatMoneyLine(item.UnitPrice, item.Quantity, item.LineTotal)</strong>
+                        <span>Tutar</span>
+                        <strong>@TurkeyTime.FormatMoney(item.LineTotal)</strong>
                     </div>
                 }
             </div>
@@ -95,13 +95,10 @@
                 </MudItem>
                 @if (CurrentUser.CanViewPrices)
                 {
-                    <MudItem xs="6" md="2">
-                        <MudNumericField T="decimal" @bind-Value="item.UnitPrice" Label="Birim fiyat" Variant="Variant.Outlined"
+                    <MudItem xs="6" md="3">
+                        <MudNumericField T="decimal" @bind-Value="item.LineTotal" Label="Tutar" Variant="Variant.Outlined"
                                         Min="0m" Step="0.01m" HideSpinButtons="true" Immediate="true"
                                         Format="N2" Culture="TurkeyTime.Culture" />
-                    </MudItem>
-                    <MudItem xs="6" md="2" Class="d-flex align-center">
-                        <MudText>Kalem: @TurkeyTime.FormatMoney(item.LineTotal)</MudText>
                     </MudItem>
                 }
                 <MudItem xs="12" md="4">
@@ -186,7 +183,7 @@
             WidthCm = i.WidthCm,
             HeightCm = i.HeightCm,
             Quantity = i.Quantity,
-            UnitPrice = i.UnitPrice,
+            LineTotal = i.LineTotal,
             ExtraFeatureIds = i.ExtraFeatureIds.ToHashSet(),
             Note = i.Note
         }).ToList();

@@ -72,7 +72,7 @@ public class OrderTests
     public void CreateItem_ShouldReject_NegativePrice()
     {
         var act = () => OrderItem.Create(1, 80, 120, 1, -1);
-        act.Should().Throw<DomainException>().WithMessage("*Birim fiyat*");
+        act.Should().Throw<DomainException>().WithMessage("*Tutar*");
     }
 
     [Fact]
@@ -80,7 +80,6 @@ public class OrderTests
     {
         var order = OrderFactory.Create();
 
-        order.Items.First().UnitPrice.Should().Be(150);
         order.Items.First().LineTotal.Should().Be(300);
         order.GrandTotal.Should().Be(300);
     }
@@ -180,7 +179,7 @@ internal static class OrderFactory
             order,
             delivery,
             DeliveryPlace.Sirket,
-            [OrderItem.Create(1, 80, 120, 2, 150m, [1], "köşe kesim")],
+            [OrderItem.Create(1, 80, 120, 2, 300m, [1], "köşe kesim")],
             "user-1");
     }
 }

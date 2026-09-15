@@ -33,7 +33,7 @@ public sealed class OrderItemInputValidator : AbstractValidator<OrderItemInput>
         RuleFor(x => x.WidthCm).GreaterThan(0).WithMessage("Yatay ölçü sıfırdan büyük olmalıdır.");
         RuleFor(x => x.HeightCm).GreaterThan(0).WithMessage("Dikey ölçü sıfırdan büyük olmalıdır.");
         RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("Adet sıfırdan büyük olmalıdır.");
-        RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0).WithMessage("Birim fiyat negatif olamaz.");
+        RuleFor(x => x.LineTotal).GreaterThanOrEqualTo(0).WithMessage("Tutar negatif olamaz.");
         RuleFor(x => x.Note).MaximumLength(400);
     }
 }

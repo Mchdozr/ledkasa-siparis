@@ -49,7 +49,7 @@ public static class DemoOrderSeeder
                 orderDate,
                 deliveryDate,
                 spec.Place,
-                spec.Items.Select(i => OrderItem.Create(i.ProductId, i.Width, i.Height, i.Qty, i.Price, i.Extras, i.Note)),
+                spec.Items.Select(i => OrderItem.Create(i.ProductId, i.Width, i.Height, i.Qty, i.LineTotal, i.Extras, i.Note)),
                 userId,
                 spec.Notes);
             ApplyStatus(order, spec.Status, userId);
@@ -95,7 +95,7 @@ public static class DemoOrderSeeder
         decimal Width,
         decimal Height,
         int Qty,
-        decimal Price,
+        decimal LineTotal,
         int[]? Extras = null,
         string? Note = null);
 

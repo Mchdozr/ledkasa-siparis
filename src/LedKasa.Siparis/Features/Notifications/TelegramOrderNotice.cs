@@ -7,8 +7,6 @@ public sealed record TelegramOrderLine(
     decimal WidthCm,
     decimal HeightCm,
     int Quantity,
-    decimal UnitPrice,
-    decimal LineTotal,
     string? Note,
     IReadOnlyList<string> Extras);
 
@@ -20,6 +18,5 @@ public sealed record TelegramOrderNotice(
     DateOnly DeliveryDate,
     DeliveryPlace Place,
     string? Notes,
-    decimal GrandTotal,
     string? CreatedBy,
     IReadOnlyList<TelegramOrderLine> Lines);

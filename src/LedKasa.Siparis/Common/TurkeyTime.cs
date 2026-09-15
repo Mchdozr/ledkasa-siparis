@@ -23,9 +23,6 @@ public static class TurkeyTime
 
     public static string FormatMoney(decimal amount) => amount.ToString("N2", Culture);
 
-    public static string FormatMoneyLine(decimal unitPrice, int quantity, decimal lineTotal) =>
-        $"{FormatMoney(unitPrice)} × {quantity} = {FormatMoney(lineTotal)}";
-
     private static TimeZoneInfo ResolveZone()
     {
         foreach (var id in new[] { "Turkey Standard Time", "Europe/Istanbul" })

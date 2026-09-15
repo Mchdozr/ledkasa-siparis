@@ -9,11 +9,9 @@ public sealed class OrderItemInput
     public decimal WidthCm { get; set; }
     public decimal HeightCm { get; set; }
     public int Quantity { get; set; } = 1;
-    public decimal UnitPrice { get; set; }
+    public decimal LineTotal { get; set; }
     public IEnumerable<int> ExtraFeatureIds { get; set; } = new HashSet<int>();
     public string? Note { get; set; }
-
-    public decimal LineTotal => decimal.Round(UnitPrice * Quantity, 2, MidpointRounding.AwayFromZero);
 }
 
 public sealed class OrderDraft
@@ -99,7 +97,6 @@ public sealed class OrderItemDto
     public decimal WidthCm { get; init; }
     public decimal HeightCm { get; init; }
     public int Quantity { get; init; }
-    public decimal UnitPrice { get; init; }
     public decimal LineTotal { get; init; }
     public string? Note { get; init; }
     public IReadOnlyList<int> ExtraFeatureIds { get; init; } = [];

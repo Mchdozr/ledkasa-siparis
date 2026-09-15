@@ -181,6 +181,6 @@ public class ReportServiceTests
         OrderDate = date,
         DeliveryDate = date.AddDays(2),
         DeliveryPlace = DeliveryPlace.Sirket,
-        Items = [new OrderItemInput { ProductId = 1, WidthCm = 50, HeightCm = 50, Quantity = 1, UnitPrice = 25 }]
+        Items = [new OrderItemInput { ProductId = 1, WidthCm = 50, HeightCm = 50, Quantity = 1, LineTotal = 25 }]
     };
 }

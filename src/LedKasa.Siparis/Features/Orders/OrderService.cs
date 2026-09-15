@@ -153,7 +153,7 @@ public sealed class OrderService : IOrderService
 
         var order = await LoadTrackedAsync(id, cancellationToken);
         _db.Entry(order).Property(x => x.RowVersion).OriginalValue = rowVersion;
-        var existingPrices = order.Items.ToDictionary(i => i.Id, i => i.UnitPrice);
+        var existingTotals = order.Items.ToDictionary(i => i.Id, i => i.LineTotal);
 
         order.UpdateHeader(
             draft.CustomerName,
@@ -164,7 +164,7 @@ public sealed class OrderService : IOrderService
             _currentUser.UserId);
 
         _db.OrderItems.RemoveRange(order.Items);
-        order.ReplaceItems(draft.Items.Select(input => ToItem(ApplyPricePolicy(input, existingPrices))), _currentUser.UserId);
+        order.ReplaceItems(draft.Items.Select(input => ToItem(ApplyPricePolicy(input, existingTotals))), _currentUser.UserId);
 
         AddAudit("OrderUpdated", "Order", order.Id.ToString(), order.OrderNumber);
         await _db.SaveChangesAsync(cancellationToken);
@@ -212,15 +212,12 @@ public sealed class OrderService : IOrderService
             order.DeliveryDate,
             order.DeliveryPlace,
             order.Notes,
-            order.GrandTotal,
             _currentUser.DisplayName ?? _currentUser.UserName,
             order.Items.Select(item => new TelegramOrderLine(
                 products.GetValueOrDefault(item.ProductId, $"Ürün #{item.ProductId}"),
                 item.WidthCm,
                 item.HeightCm,
                 item.Quantity,
-                item.UnitPrice,
-                item.LineTotal,
                 item.Note,
                 item.ExtraFeatures
                     .Select(f => extras.GetValueOrDefault(f.ExtraFeatureId))
@@ -259,15 +256,15 @@ public sealed class OrderService : IOrderService
         };
 
     private static OrderItem ToItem(OrderItemInput input) =>
-        OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.UnitPrice, input.ExtraFeatureIds, input.Note);
+        OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.LineTotal, input.ExtraFeatureIds, input.Note);
 
-    private OrderItemInput ApplyPricePolicy(OrderItemInput input, IReadOnlyDictionary<int, decimal>? existingPrices = null)
+    private OrderItemInput ApplyPricePolicy(OrderItemInput input, IReadOnlyDictionary<int, decimal>? existingTotals = null)
     {
         if (_currentUser.CanViewPrices)
             return input;
 
-        input.UnitPrice = input.Id != 0 && existingPrices is not null && existingPrices.TryGetValue(input.Id, out var price)
-            ? price
+        input.LineTotal = input.Id != 0 && existingTotals is not null && existingTotals.TryGetValue(input.Id, out var total)
+            ? total
             : 0;
         return input;
     }
@@ -313,7 +310,6 @@ public sealed class OrderService : IOrderService
                 WidthCm = i.WidthCm,
                 HeightCm = i.HeightCm,
                 Quantity = i.Quantity,
-                UnitPrice = canViewPrices ? i.UnitPrice : 0,
                 LineTotal = canViewPrices ? i.LineTotal : 0,
                 Note = i.Note,
                 ExtraFeatureIds = i.ExtraFeatures.Select(f => f.ExtraFeatureId).ToList(),
