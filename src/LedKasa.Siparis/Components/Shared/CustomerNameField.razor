@@ -1,0 +1,37 @@
+@inject IOrderService Orders
+
+<MudAutocomplete T="string"
+                 Value="Value"
+                 ValueChanged="ValueChanged"
+                 Label="Sipariş veren kişi"
+                 Variant="Variant.Outlined"
+                 Required="true"
+                 RequiredError="Sipariş veren kişi zorunludur."
+                 SearchFunc="SearchAsync"
+                 MinCharacters="1"
+                 MaxItems="12"
+                 DebounceInterval="150"
+                 CoerceValue="true"
+                 ResetValueOnEmptyText="true"
+                 Clearable="true"
+                 Dense="true">
+    <NoItemsTemplate>
+        <MudText Typo="Typo.caption" Class="px-4 py-2">Eşleşen kişi yok. Yeni isim yazabilirsiniz.</MudText>
+    </NoItemsTemplate>
+</MudAutocomplete>
+
+@code {
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private Task<IReadOnlyList<string>>? _peopleTask;
+
+    private Task<IReadOnlyList<string>> EnsurePeopleAsync()
+        => _peopleTask ??= Orders.ListKnownPeopleAsync();
+
+    private async Task<IEnumerable<string>> SearchAsync(string value, CancellationToken _)
+    {
+        var people = await EnsurePeopleAsync();
+        return PersonNameSearch.Filter(people, value);
+    }
+}

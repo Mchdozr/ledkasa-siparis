@@ -179,6 +179,7 @@ public sealed class OrderService : IOrderService
 
         var customers = await _db.Orders.AsNoTracking()
             .Select(o => o.CustomerName)
+            .Distinct()
             .ToListAsync(cancellationToken);
 
         var comparer = StringComparer.Create(TurkeyTime.Culture, ignoreCase: true);
