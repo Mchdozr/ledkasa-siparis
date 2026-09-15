@@ -2,9 +2,11 @@ using FluentValidation;
 using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Audit;
+using LedKasa.Siparis.Features.Notifications;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LedKasa.Siparis.Features.Orders;
 
@@ -23,15 +25,21 @@ public sealed class OrderService : IOrderService
     private readonly ApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
     private readonly IValidator<OrderDraft> _validator;
+    private readonly IWhatsAppNotifier _whatsApp;
+    private readonly ILogger<OrderService> _logger;
 
     public OrderService(
         ApplicationDbContext db,
         ICurrentUser currentUser,
-        IValidator<OrderDraft> validator)
+        IValidator<OrderDraft> validator,
+        IWhatsAppNotifier whatsApp,
+        ILogger<OrderService>? logger = null)
     {
         _db = db;
         _currentUser = currentUser;
         _validator = validator;
+        _whatsApp = whatsApp;
+        _logger = logger ?? NullLogger<OrderService>.Instance;
     }
 
     public async Task<PagedResult<OrderListItemDto>> ListAsync(OrderListFilter filter, CancellationToken cancellationToken = default)
@@ -135,6 +143,14 @@ public sealed class OrderService : IOrderService
         _db.Orders.Add(order);
         AddAudit("OrderCreated", "Order", number, $"Müşteri: {order.CustomerName}");
         await _db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await NotifyCreatedAsync(order, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "WhatsApp sipariş bildirimi gönderilemedi: {OrderNumber}", order.OrderNumber);
+        }
         return order.Id;
     }
 
@@ -188,6 +204,35 @@ public sealed class OrderService : IOrderService
             .Distinct(comparer)
             .OrderBy(n => n, comparer)
             .ToList();
+    }
+
+    private async Task NotifyCreatedAsync(Order order, CancellationToken cancellationToken)
+    {
+        var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
+        var products = await _db.Products.AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.Name, cancellationToken);
+
+        var notice = new WhatsAppOrderNotice(
+            order.Id,
+            order.OrderNumber,
+            order.CustomerName,
+            order.OrderDate,
+            order.DeliveryDate,
+            order.DeliveryPlace,
+            order.Notes,
+            _currentUser.DisplayName ?? _currentUser.UserName,
+            order.Items.Select(item => new WhatsAppOrderLine(
+                products.GetValueOrDefault(item.ProductId, $"Ürün #{item.ProductId}"),
+                item.WidthCm,
+                item.HeightCm,
+                item.DepthCm,
+                item.Quantity,
+                item.Side,
+                item.Note
+            )).ToList());
+
+        await _whatsApp.NotifyOrderCreatedAsync(notice, cancellationToken);
     }
 
     private async Task<Order> LoadTrackedAsync(int id, CancellationToken cancellationToken)

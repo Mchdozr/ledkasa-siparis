@@ -32,8 +32,15 @@ Ortam değişkenleri (Plesk .NET Core → Düzenle):
 - `ConnectionStrings__DefaultConnection` = `Server=localhost;Port=3306;Database=ledkasa_siparis;User=ledkasa_siparis;Password=...`
 - `SEED__ADMINPASSWORD` = ilk yönetici şifresi
 - `Seed__AdminEmail` = `admin@ledkasa.com.tr`
+- `WhatsApp__AccessToken` = Meta WhatsApp Cloud API kalıcı token
+- `WhatsApp__PhoneNumberId` = WhatsApp telefon numarası id
+- `WhatsApp__Recipients` = bildirim gidecek numaralar (`90555...,90532...`)
+- `WhatsApp__AppUrl` = `https://siparis.ledkasa.com.tr`
+- `WhatsApp__TemplateName` = (isteğe bağlı) onaylı şablon adı; boşsa düz metin gider
 
 Parolaları repoya yazmayın.
+
+WhatsApp: Meta Developer → WhatsApp → API Setup. Test numaralarını ekleyin veya üretimde `yeni_siparis` şablonunu onaylatın (`{{1}}` sipariş no, `{{2}}` kişi, `{{3}}` teslim, `{{4}}` link). Token yoksa sipariş kaydı yine oluşur, bildirim atlanır.
 
 ## Veritabanı
 

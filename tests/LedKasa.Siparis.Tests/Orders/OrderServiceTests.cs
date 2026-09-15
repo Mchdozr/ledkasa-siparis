@@ -33,6 +33,61 @@ public class OrderServiceTests
     }
 
     [Fact]
+    public async Task Create_ShouldNotifyWhatsApp()
+    {
+        await using var db = TestDb.Create();
+        var whatsApp = new RecordingWhatsAppNotifier();
+        var service = new OrderService(
+            db,
+            new TestCurrentUser { DisplayName = "Admin" },
+            new OrderDraftValidator(),
+            whatsApp);
+
+        var id = await service.CreateAsync(Draft("Ayşe Kaya"));
+
+        whatsApp.CallCount.Should().Be(1);
+        whatsApp.Last.Should().NotBeNull();
+        whatsApp.Last!.Id.Should().Be(id);
+        whatsApp.Last.CustomerName.Should().Be("Ayşe Kaya");
+        whatsApp.Last.CreatedBy.Should().Be("Admin");
+        whatsApp.Last.Lines.Should().ContainSingle();
+        whatsApp.Last.Lines[0].ProductName.Should().Be("Rental LED Kabinet");
+        whatsApp.Last.Lines[0].DepthCm.Should().Be(5);
+        whatsApp.Last.Lines[0].Side.Should().Be(PanelSide.TekYon);
+    }
+
+    [Fact]
+    public async Task Create_ShouldSucceed_WhenWhatsAppThrows()
+    {
+        await using var db = TestDb.Create();
+        var service = new OrderService(
+            db,
+            new TestCurrentUser(),
+            new OrderDraftValidator(),
+            new ThrowingWhatsAppNotifier());
+
+        var id = await service.CreateAsync(Draft("Ali"));
+
+        id.Should().BeGreaterThan(0);
+        db.Orders.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Create_ShouldNotNotify_WhenValidationFails()
+    {
+        await using var db = TestDb.Create();
+        var whatsApp = new RecordingWhatsAppNotifier();
+        var service = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), whatsApp);
+        var draft = Draft("Ali");
+        draft.DeliveryDate = draft.OrderDate.AddDays(-1);
+
+        var act = async () => await service.CreateAsync(draft);
+        await act.Should().ThrowAsync<ValidationException>();
+        whatsApp.CallCount.Should().Be(0);
+        db.Orders.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Create_ShouldPersistDepthAndCiftYon()
     {
         await using var db = TestDb.Create();
@@ -205,7 +260,7 @@ public class OrderServiceTests
     private static OrderService CreateService(
         LedKasa.Siparis.Data.ApplicationDbContext db,
         bool canCreateOrders = true)
-        => new(db, new TestCurrentUser { CanCreateOrders = canCreateOrders }, new OrderDraftValidator());
+        => new(db, new TestCurrentUser { CanCreateOrders = canCreateOrders }, new OrderDraftValidator(), new NullWhatsAppNotifier());
 
     private static OrderDraft Draft(string name, DateOnly? orderDate = null, DateOnly? deliveryDate = null) => new()
     {

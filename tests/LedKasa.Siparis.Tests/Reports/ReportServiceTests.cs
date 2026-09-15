@@ -13,7 +13,7 @@ public class ReportServiceTests
     public async Task WeeklyReport_ShouldIncludeOnlyMatchingOrders()
     {
         await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), new NullWhatsAppNotifier());
         await orders.CreateAsync(Draft("İçerde", new DateOnly(2026, 9, 10)));
         await orders.CreateAsync(Draft("Dışarıda", new DateOnly(2026, 8, 1)));
 
@@ -34,7 +34,7 @@ public class ReportServiceTests
     public async Task Report_ShouldExcludeCancelledByDefault()
     {
         await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), new NullWhatsAppNotifier());
         await orders.CreateAsync(Draft("Aktif", new DateOnly(2026, 9, 10)));
         var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
         var cancelled = await orders.GetAsync(cancelledId);
@@ -55,7 +55,7 @@ public class ReportServiceTests
     public async Task Report_ShouldListCancelled_WhenFiltered()
     {
         await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), new NullWhatsAppNotifier());
         var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
         var cancelled = await orders.GetAsync(cancelledId);
         await orders.ChangeStatusAsync(cancelledId, OrderStatus.Iptal, cancelled!.RowVersion);
@@ -74,7 +74,7 @@ public class ReportServiceTests
     public async Task Report_ShouldIncludeCancelled_WhenSelectedWithOthers()
     {
         await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), new NullWhatsAppNotifier());
         await orders.CreateAsync(Draft("Aktif", new DateOnly(2026, 9, 10)));
         var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
         var cancelled = await orders.GetAsync(cancelledId);
@@ -95,7 +95,7 @@ public class ReportServiceTests
     public async Task ExcelAndPdf_ShouldContainOrderNumber()
     {
         await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), new NullWhatsAppNotifier());
         await orders.CreateAsync(Draft("Rapor", new DateOnly(2026, 9, 10)));
         var report = await new ReportService(db).GetAsync(new ReportRequest
         {
