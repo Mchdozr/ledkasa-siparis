@@ -3,6 +3,7 @@ using FluentValidation;
 using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
+using LedKasa.Siparis.Identity;
 using LedKasa.Siparis.Tests.Infrastructure;
 
 namespace LedKasa.Siparis.Tests.Orders;
@@ -99,6 +100,38 @@ public class OrderServiceTests
         await act.Should().ThrowAsync<DomainException>()
             .WithMessage("*oluşturma yetkiniz yok*");
         db.Orders.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ListKnownPeople_ShouldIncludeActiveUsersAndCustomers()
+    {
+        await using var db = TestDb.Create();
+        db.Users.AddRange(
+            new ApplicationUser
+            {
+                Id = "u-ahmet",
+                UserName = "ahmet",
+                DisplayName = "Ahmet Yılmaz",
+                IsActive = true
+            },
+            new ApplicationUser
+            {
+                Id = "u-pasif",
+                UserName = "pasif",
+                DisplayName = "Pasif Kişi",
+                IsActive = false
+            });
+        await db.SaveChangesAsync();
+        var service = CreateService(db);
+        await service.CreateAsync(Draft("Ayşe Kaya"));
+        await service.CreateAsync(Draft("ahmet yılmaz"));
+
+        var names = await service.ListKnownPeopleAsync();
+        names.Should().Contain("Ahmet Yılmaz");
+        names.Should().Contain("Ayşe Kaya");
+        names.Should().NotContain("Pasif Kişi");
+        names.Count(n => string.Equals(n, "Ahmet Yılmaz", StringComparison.OrdinalIgnoreCase))
+            .Should().Be(1);
     }
 
     [Fact]

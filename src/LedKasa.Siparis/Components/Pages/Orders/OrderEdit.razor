@@ -20,7 +20,26 @@
     <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
         <MudGrid Spacing="3">
             <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="_draft.CustomerName" Label="Sipariş veren kişi" Variant="Variant.Outlined" Required="true" />
+                <MudAutocomplete T="string"
+                                 @bind-Value="_draft.CustomerName"
+                                 Label="Sipariş veren kişi"
+                                 Variant="Variant.Outlined"
+                                 Required="true"
+                                 RequiredError="Sipariş veren kişi zorunludur."
+                                 SearchFunc="SearchPeopleAsync"
+                                 MinCharacters="1"
+                                 MaxItems="12"
+                                 DebounceInterval="0"
+                                 CoerceValue="true"
+                                 CoerceText="true"
+                                 ResetValueOnEmptyText="true"
+                                 Immediate="true"
+                                 Clearable="true"
+                                 Dense="true">
+                    <NoItemsTemplate>
+                        <MudText Typo="Typo.caption" Class="px-4 py-2">Eşleşen kişi yok. Yeni isim yazabilirsiniz.</MudText>
+                    </NoItemsTemplate>
+                </MudAutocomplete>
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudSelect T="DeliveryPlace" @bind-Value="_draft.DeliveryPlace" Label="Teslim yeri" Variant="Variant.Outlined">
@@ -125,6 +144,7 @@
     private DateTime? _orderDate;
     private DateTime? _deliveryDate;
     private IReadOnlyList<ProductDto> _products = [];
+    private IReadOnlyList<string> _people = [];
     private DateTime _rowVersion;
     private bool _saving;
 
@@ -136,7 +156,11 @@
             return;
         }
 
-        _products = await ProductsApi.ListAsync(activeOnly: true);
+        var productsTask = ProductsApi.ListAsync(activeOnly: true);
+        var peopleTask = Orders.ListKnownPeopleAsync();
+        await Task.WhenAll(productsTask, peopleTask);
+        _products = await productsTask;
+        _people = await peopleTask;
         _orderDate = _draft.OrderDate.ToDateTime(TimeOnly.MinValue);
         _deliveryDate = _draft.DeliveryDate.ToDateTime(TimeOnly.MinValue);
 
@@ -190,6 +214,12 @@
     }
 
     private int CncProductId => ProductDefaults.ResolveCncProductId(_products);
+
+    private Task<IEnumerable<string>> SearchPeopleAsync(string value, CancellationToken _)
+    {
+        IEnumerable<string> names = PersonNameSearch.Filter(_people, value);
+        return Task.FromResult(names);
+    }
 
     private void AddItem() => _draft.Items.Add(new OrderItemInput { ProductId = CncProductId });
 

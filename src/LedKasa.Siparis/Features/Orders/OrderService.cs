@@ -15,6 +15,7 @@ public interface IOrderService
     Task<int> CreateAsync(OrderDraft draft, CancellationToken cancellationToken = default);
     Task UpdateAsync(int id, OrderDraft draft, DateTime rowVersion, CancellationToken cancellationToken = default);
     Task ChangeStatusAsync(int id, OrderStatus next, DateTime rowVersion, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> ListKnownPeopleAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class OrderService : IOrderService
@@ -167,6 +168,26 @@ public sealed class OrderService : IOrderService
         order.TransitionTo(next, _currentUser.UserId);
         AddAudit("OrderStatusChanged", "Order", order.Id.ToString(), $"{DisplayNames.Status(previous)} → {DisplayNames.Status(next)}");
         await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> ListKnownPeopleAsync(CancellationToken cancellationToken = default)
+    {
+        var users = await _db.Users.AsNoTracking()
+            .Where(u => u.IsActive)
+            .Select(u => u.DisplayName)
+            .ToListAsync(cancellationToken);
+
+        var customers = await _db.Orders.AsNoTracking()
+            .Select(o => o.CustomerName)
+            .ToListAsync(cancellationToken);
+
+        var comparer = StringComparer.Create(TurkeyTime.Culture, ignoreCase: true);
+        return users.Concat(customers)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(n => n.Trim())
+            .Distinct(comparer)
+            .OrderBy(n => n, comparer)
+            .ToList();
     }
 
     private async Task<Order> LoadTrackedAsync(int id, CancellationToken cancellationToken)
