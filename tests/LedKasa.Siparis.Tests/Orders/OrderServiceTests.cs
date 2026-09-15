@@ -103,7 +103,7 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public async Task ListKnownPeople_ShouldIncludeActiveUsersAndCustomers()
+    public async Task ListPersonSuggestions_ShouldSeparatePreviousCustomersFromUsers()
     {
         await using var db = TestDb.Create();
         db.Users.AddRange(
@@ -116,6 +116,13 @@ public class OrderServiceTests
             },
             new ApplicationUser
             {
+                Id = "u-zeynep",
+                UserName = "zeynep",
+                DisplayName = "Zeynep Koç",
+                IsActive = true
+            },
+            new ApplicationUser
+            {
                 Id = "u-pasif",
                 UserName = "pasif",
                 DisplayName = "Pasif Kişi",
@@ -124,14 +131,16 @@ public class OrderServiceTests
         await db.SaveChangesAsync();
         var service = CreateService(db);
         await service.CreateAsync(Draft("Ayşe Kaya"));
-        await service.CreateAsync(Draft("ahmet yılmaz"));
+        await service.CreateAsync(Draft("Mehmet Demir"));
+        await service.CreateAsync(Draft("ayşe kaya"));
 
-        var names = await service.ListKnownPeopleAsync();
-        names.Should().Contain("Ahmet Yılmaz");
-        names.Should().Contain("Ayşe Kaya");
-        names.Should().NotContain("Pasif Kişi");
-        names.Count(n => string.Equals(n, "Ahmet Yılmaz", StringComparison.OrdinalIgnoreCase))
-            .Should().Be(1);
+        var suggestions = await service.ListPersonSuggestionsAsync();
+        suggestions.PreviousCustomers.Should().Equal("Ayşe Kaya", "Mehmet Demir");
+        suggestions.PreviousCustomers.Should().NotContain("Zeynep Koç");
+        suggestions.All.Should().Contain("Ahmet Yılmaz");
+        suggestions.All.Should().Contain("Zeynep Koç");
+        suggestions.All.Should().Contain("Ayşe Kaya");
+        suggestions.All.Should().NotContain("Pasif Kişi");
     }
 
     [Fact]

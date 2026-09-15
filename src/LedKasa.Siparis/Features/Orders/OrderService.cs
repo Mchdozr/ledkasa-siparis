@@ -15,7 +15,7 @@ public interface IOrderService
     Task<int> CreateAsync(OrderDraft draft, CancellationToken cancellationToken = default);
     Task UpdateAsync(int id, OrderDraft draft, DateTime rowVersion, CancellationToken cancellationToken = default);
     Task ChangeStatusAsync(int id, OrderStatus next, DateTime rowVersion, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<string>> ListKnownPeopleAsync(CancellationToken cancellationToken = default);
+    Task<PersonSuggestions> ListPersonSuggestionsAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class OrderService : IOrderService
@@ -170,7 +170,7 @@ public sealed class OrderService : IOrderService
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<string>> ListKnownPeopleAsync(CancellationToken cancellationToken = default)
+    public async Task<PersonSuggestions> ListPersonSuggestionsAsync(CancellationToken cancellationToken = default)
     {
         var users = await _db.Users.AsNoTracking()
             .Where(u => u.IsActive)
@@ -179,16 +179,11 @@ public sealed class OrderService : IOrderService
 
         var customers = await _db.Orders.AsNoTracking()
             .Select(o => o.CustomerName)
-            .Distinct()
             .ToListAsync(cancellationToken);
 
-        var comparer = StringComparer.Create(TurkeyTime.Culture, ignoreCase: true);
-        return users.Concat(customers)
-            .Where(n => !string.IsNullOrWhiteSpace(n))
-            .Select(n => n.Trim())
-            .Distinct(comparer)
-            .OrderBy(n => n, comparer)
-            .ToList();
+        var previous = PersonNameSearch.UniqueSorted(customers);
+        var all = PersonNameSearch.UniqueSorted(users.Concat(previous));
+        return new PersonSuggestions(previous, all);
     }
 
     private async Task<Order> LoadTrackedAsync(int id, CancellationToken cancellationToken)

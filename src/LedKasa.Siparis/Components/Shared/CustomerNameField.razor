@@ -8,9 +8,11 @@
                  Required="true"
                  RequiredError="Sipariş veren kişi zorunludur."
                  SearchFunc="SearchAsync"
-                 MinCharacters="1"
-                 MaxItems="12"
-                 DebounceInterval="150"
+                 MinCharacters="0"
+                 MaxItems="@((int?)null)"
+                 MaxHeight="400"
+                 DebounceInterval="0"
+                 OpenOnFocus="true"
                  CoerceValue="true"
                  ResetValueOnEmptyText="true"
                  Clearable="true"
@@ -24,14 +26,28 @@
     [Parameter] public string Value { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
 
-    private Task<IReadOnlyList<string>>? _peopleTask;
+    private PersonSuggestions _suggestions = new([], []);
+    private Task? _loadTask;
 
-    private Task<IReadOnlyList<string>> EnsurePeopleAsync()
-        => _peopleTask ??= Orders.ListKnownPeopleAsync();
+    protected override Task OnInitializedAsync() => EnsureAsync();
+
+    private Task EnsureAsync()
+    {
+        return _loadTask ??= LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _suggestions = await Orders.ListPersonSuggestionsAsync();
+    }
 
     private async Task<IEnumerable<string>> SearchAsync(string value, CancellationToken _)
     {
-        var people = await EnsurePeopleAsync();
-        return PersonNameSearch.Filter(people, value);
+        await EnsureAsync();
+        var trimmed = value?.Trim() ?? string.Empty;
+        if (trimmed.Length == 0 || string.Equals(trimmed, Value, StringComparison.Ordinal))
+            return _suggestions.PreviousCustomers;
+
+        return PersonNameSearch.Filter(_suggestions.All, trimmed);
     }
 }

@@ -29,4 +29,11 @@ public class PersonNameSearchTests
         PersonNameSearch.Filter(["Ahmet Yılmaz", "ahmet yılmaz", "Ayşe"], "ah")
             .Should().Equal("Ahmet Yılmaz");
     }
+
+    [Fact]
+    public void UniqueSorted_ShouldOrderIgnoringTurkishCase()
+    {
+        PersonNameSearch.UniqueSorted(["Mehmet", "ayşe", "Ayşe", "Ahmet"])
+            .Should().Equal("Ahmet", "ayşe", "Mehmet");
+    }
 }

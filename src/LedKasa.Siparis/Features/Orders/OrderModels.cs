@@ -25,6 +25,10 @@ public sealed class OrderDraft
     public List<OrderItemInput> Items { get; set; } = [new()];
 }
 
+public sealed record PersonSuggestions(
+    IReadOnlyList<string> PreviousCustomers,
+    IReadOnlyList<string> All);
+
 public sealed class OrderListFilter
 {
     public string? Search { get; set; }

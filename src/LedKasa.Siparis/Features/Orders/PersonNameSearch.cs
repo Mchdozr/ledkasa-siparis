@@ -5,19 +5,25 @@ namespace LedKasa.Siparis.Features.Orders;
 
 public static class PersonNameSearch
 {
-    public static IReadOnlyList<string> Filter(IEnumerable<string?> names, string? term, int take = 12)
+    public static IReadOnlyList<string> UniqueSorted(IEnumerable<string?> names)
     {
         var comparer = StringComparer.Create(TurkeyTime.Culture, ignoreCase: true);
-        var unique = names
+        return names
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .Select(n => n!.Trim())
-            .Distinct(comparer);
+            .Distinct(comparer)
+            .OrderBy(n => n, comparer)
+            .ToList();
+    }
 
+    public static IReadOnlyList<string> Filter(IEnumerable<string?> names, string? term, int take = 12)
+    {
         var trimmed = term?.Trim() ?? string.Empty;
         if (trimmed.Length == 0)
             return [];
 
-        return unique
+        var comparer = StringComparer.Create(TurkeyTime.Culture, ignoreCase: true);
+        return UniqueSorted(names)
             .Where(name => Matches(name, trimmed))
             .OrderBy(name => name, comparer)
             .Take(take)
