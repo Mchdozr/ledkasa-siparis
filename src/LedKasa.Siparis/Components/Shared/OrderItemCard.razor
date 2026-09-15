@@ -16,7 +16,7 @@
         {
             <div class="lk-item-line">
                 <span>Fiyat</span>
-                <strong>@TurkeyTime.FormatMoneyLine(Item.UnitPrice, Item.Quantity, Item.LineTotal, Currency)</strong>
+                <strong>@TurkeyTime.FormatMoneyLine(Item.UnitPrice, Item.Quantity, Item.LineTotal)</strong>
             </div>
         }
     </div>
@@ -37,6 +37,5 @@
 
 @code {
     [Parameter, EditorRequired] public OrderItemDto Item { get; set; } = default!;
-    [Parameter] public Currency Currency { get; set; } = Currency.Try;
     [Parameter] public bool ShowPrices { get; set; } = true;
 }

@@ -1,5 +1,4 @@
 using System.Globalization;
-using LedKasa.Siparis.Features.Orders.Domain;
 
 namespace LedKasa.Siparis.Common;
 
@@ -22,26 +21,10 @@ public static class TurkeyTime
 
     public static string FormatDateTime(DateTime utc) => ToTurkey(utc).ToString("dd.MM.yyyy HH:mm");
 
-    public static string FormatMoney(decimal amount) => FormatMoney(amount, Currency.Try);
+    public static string FormatMoney(decimal amount) => amount.ToString("N2", Culture);
 
-    public static string FormatMoney(decimal amount, Currency currency)
-    {
-        var number = amount.ToString("N2", Culture);
-        var symbol = currency switch
-        {
-            Currency.Try => "TL",
-            Currency.Usd => "$",
-            Currency.Eur => "€",
-            _ => throw new ArgumentOutOfRangeException(nameof(currency), currency, null)
-        };
-        return number + " " + symbol;
-    }
-
-    public static string FormatMoneyLine(decimal unitPrice, int quantity, decimal lineTotal, Currency currency) =>
-        $"{FormatMoney(unitPrice, currency)} × {quantity} = {FormatMoney(lineTotal, currency)}";
-
-    public static string FormatMoneyTotals(IEnumerable<(Currency Currency, decimal Amount)> totals) =>
-        string.Join(" · ", totals.Select(t => FormatMoney(t.Amount, t.Currency)));
+    public static string FormatMoneyLine(decimal unitPrice, int quantity, decimal lineTotal) =>
+        $"{FormatMoney(unitPrice)} × {quantity} = {FormatMoney(lineTotal)}";
 
     private static TimeZoneInfo ResolveZone()
     {

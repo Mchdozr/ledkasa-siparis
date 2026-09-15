@@ -16,9 +16,7 @@ public class TelegramMessageFormatterTests
             new DateOnly(2026, 9, 12),
             new DateOnly(2026, 9, 20),
             DeliveryPlace.Fabrika,
-            "OSB 2. Cad.",
             "acele",
-            Currency.Usd,
             400,
             "Admin",
             [
@@ -34,14 +32,14 @@ public class TelegramMessageFormatterTests
         text.Should().Contain("Sipariş tarihi: 12.09.2026");
         text.Should().Contain("Teslim tarihi: 20.09.2026");
         text.Should().Contain("Teslim yeri: Fabrika");
-        text.Should().Contain("Teslimat adresi: OSB 2. Cad.");
         text.Should().Contain("Not: acele");
         text.Should().Contain("Ürün: Rental LED Kabinet");
         text.Should().Contain("Ölçü: 96 × 96 cm");
         text.Should().Contain("Adet: 4");
         text.Should().Contain("Ekstra: Köşe kesim");
         text.Should().Contain("Oluşturan: Admin");
-        text.Should().NotContain("400,00 $");
+        text.Should().NotContain("Teslimat adresi");
+        text.Should().NotContain("400,00");
         text.Should().NotContain("Toplam");
         text.Should().Contain("https://siparis.ledkasa.com.tr/orders/12");
     }

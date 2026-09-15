@@ -54,7 +54,6 @@ public class DemoOrderSeederTests
             new DateOnly(2026, 9, 12),
             new DateOnly(2026, 9, 14),
             DeliveryPlace.Sirket,
-            "Mevcut teslimat adresi",
             [OrderItem.Create(1, 50, 50, 1, 100)],
             "admin-1"));
         await db.SaveChangesAsync();

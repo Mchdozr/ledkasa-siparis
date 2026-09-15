@@ -91,7 +91,6 @@ public sealed class OrderService : IOrderService
                 OrderDate = o.OrderDate,
                 DeliveryDate = o.DeliveryDate,
                 DeliveryPlace = o.DeliveryPlace,
-                Currency = canViewPrices ? o.Currency : Currency.Try,
                 Status = o.Status,
                 ItemCount = o.Items.Count,
                 TotalQuantity = o.Items.Sum(i => i.Quantity),
@@ -137,11 +136,9 @@ public sealed class OrderService : IOrderService
             draft.OrderDate,
             draft.DeliveryDate,
             draft.DeliveryPlace,
-            draft.DeliveryAddress,
             items,
             _currentUser.UserId,
-            draft.Notes,
-            currency: ApplyCurrencyPolicy(draft.Currency));
+            draft.Notes);
 
         _db.Orders.Add(order);
         AddAudit("OrderCreated", "Order", number, $"Müşteri: {order.CustomerName}");
@@ -163,8 +160,6 @@ public sealed class OrderService : IOrderService
             draft.OrderDate,
             draft.DeliveryDate,
             draft.DeliveryPlace,
-            draft.DeliveryAddress,
-            ApplyCurrencyPolicy(draft.Currency, order.Currency),
             draft.Notes,
             _currentUser.UserId);
 
@@ -216,9 +211,7 @@ public sealed class OrderService : IOrderService
             order.OrderDate,
             order.DeliveryDate,
             order.DeliveryPlace,
-            order.DeliveryAddress,
             order.Notes,
-            order.Currency,
             order.GrandTotal,
             _currentUser.DisplayName ?? _currentUser.UserName,
             order.Items.Select(item => new TelegramOrderLine(
@@ -268,9 +261,6 @@ public sealed class OrderService : IOrderService
     private static OrderItem ToItem(OrderItemInput input) =>
         OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.Quantity, input.UnitPrice, input.ExtraFeatureIds, input.Note);
 
-    private Currency ApplyCurrencyPolicy(Currency requested, Currency? existing = null) =>
-        _currentUser.CanViewPrices ? requested : existing ?? Currency.Usd;
-
     private OrderItemInput ApplyPricePolicy(OrderItemInput input, IReadOnlyDictionary<int, decimal>? existingPrices = null)
     {
         if (_currentUser.CanViewPrices)
@@ -306,8 +296,6 @@ public sealed class OrderService : IOrderService
             OrderDate = order.OrderDate,
             DeliveryDate = order.DeliveryDate,
             DeliveryPlace = order.DeliveryPlace,
-            DeliveryAddress = order.DeliveryAddress,
-            Currency = canViewPrices ? order.Currency : Currency.Try,
             Status = order.Status,
             Notes = order.Notes,
             CreatedByUserId = order.CreatedByUserId,

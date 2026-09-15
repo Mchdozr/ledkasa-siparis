@@ -97,7 +97,7 @@ else if (_result is not null)
                 <MudTd>@context.ItemCount / @context.TotalQuantity</MudTd>
                 @if (CurrentUser.CanViewPrices)
                 {
-                    <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal, context.Currency)</MudTd>
+                    <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal)</MudTd>
                 }
             </RowTemplate>
         </MudTable>
@@ -118,7 +118,7 @@ else if (_result is not null)
                     <div class="lk-item-line"><span>Adet</span><strong>@item.TotalQuantity</strong></div>
                     @if (CurrentUser.CanViewPrices)
                     {
-                        <div class="lk-item-line"><span>Tutar</span><strong>@TurkeyTime.FormatMoney(item.GrandTotal, item.Currency)</strong></div>
+                        <div class="lk-item-line"><span>Tutar</span><strong>@TurkeyTime.FormatMoney(item.GrandTotal)</strong></div>
                     }
                 </div>
             </MudPaper>

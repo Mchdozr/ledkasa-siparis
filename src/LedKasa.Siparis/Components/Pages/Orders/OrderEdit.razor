@@ -23,33 +23,19 @@
             <MudItem xs="12" md="6">
                 <MudTextField @bind-Value="_draft.CustomerName" Label="Sipariş veren kişi" Variant="Variant.Outlined" Required="true" />
             </MudItem>
-            <MudItem xs="12" md="3">
+            <MudItem xs="12" md="6">
                 <MudSelect T="DeliveryPlace" @bind-Value="_draft.DeliveryPlace" Label="Teslim yeri" Variant="Variant.Outlined">
                     <MudSelectItem Value="DeliveryPlace.Sirket">Şirket</MudSelectItem>
                     <MudSelectItem Value="DeliveryPlace.Fabrika">Fabrika</MudSelectItem>
                 </MudSelect>
             </MudItem>
-            @if (CurrentUser.CanViewPrices)
-            {
-                <MudItem xs="12" md="3">
-                    <MudSelect T="Currency" @bind-Value="_draft.Currency" Label="Para birimi" Variant="Variant.Outlined">
-                        <MudSelectItem Value="Currency.Try">TL (₺)</MudSelectItem>
-                        <MudSelectItem Value="Currency.Usd">USD ($)</MudSelectItem>
-                        <MudSelectItem Value="Currency.Eur">EUR (€)</MudSelectItem>
-                    </MudSelect>
-                </MudItem>
-            }
             <MudItem xs="6" md="3">
                 <MudDatePicker Date="_orderDate" DateChanged="OnOrderDate" Label="Sipariş tarihi" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
             </MudItem>
             <MudItem xs="6" md="3">
                 <MudDatePicker Date="_deliveryDate" DateChanged="OnDeliveryDate" Label="Teslim tarihi" Variant="Variant.Outlined" DateFormat="dd.MM.yyyy" />
             </MudItem>
-            <MudItem xs="12">
-                <MudTextField @bind-Value="_draft.DeliveryAddress" Label="Sipariş teslimat adresi" Variant="Variant.Outlined"
-                              Lines="2" Required="true" />
-            </MudItem>
-            <MudItem xs="12" md="9">
+            <MudItem xs="12" md="6">
                 <MudTextField @bind-Value="_draft.Notes" Label="Sipariş notu" Variant="Variant.Outlined" Lines="2" />
             </MudItem>
         </MudGrid>
@@ -81,7 +67,7 @@
                 {
                     <div class="lk-item-line">
                         <span>Fiyat</span>
-                        <strong>@TurkeyTime.FormatMoneyLine(item.UnitPrice, item.Quantity, item.LineTotal, _draft.Currency)</strong>
+                        <strong>@TurkeyTime.FormatMoneyLine(item.UnitPrice, item.Quantity, item.LineTotal)</strong>
                     </div>
                 }
             </div>
@@ -110,12 +96,12 @@
                 @if (CurrentUser.CanViewPrices)
                 {
                     <MudItem xs="6" md="2">
-                        <MudNumericField T="decimal" @bind-Value="item.UnitPrice" Label="@($"Birim fiyat ({DisplayNames.Currency(_draft.Currency)})")" Variant="Variant.Outlined"
+                        <MudNumericField T="decimal" @bind-Value="item.UnitPrice" Label="Birim fiyat" Variant="Variant.Outlined"
                                         Min="0m" Step="0.01m" HideSpinButtons="true" Immediate="true"
                                         Format="N2" Culture="TurkeyTime.Culture" />
                     </MudItem>
                     <MudItem xs="6" md="2" Class="d-flex align-center">
-                        <MudText>Kalem: @TurkeyTime.FormatMoney(item.LineTotal, _draft.Currency)</MudText>
+                        <MudText>Kalem: @TurkeyTime.FormatMoney(item.LineTotal)</MudText>
                     </MudItem>
                 }
                 <MudItem xs="12" md="4">
@@ -139,7 +125,7 @@
     @if (CurrentUser.CanViewPrices)
     {
         <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
-            <MudText Typo="Typo.h6">Sipariş toplamı: @TurkeyTime.FormatMoney(_draft.GrandTotal, _draft.Currency)</MudText>
+            <MudText Typo="Typo.h6">Sipariş toplamı: @TurkeyTime.FormatMoney(_draft.GrandTotal)</MudText>
         </MudPaper>
     }
 
@@ -192,8 +178,6 @@
         _draft.OrderDate = existing.OrderDate;
         _draft.DeliveryDate = existing.DeliveryDate;
         _draft.DeliveryPlace = existing.DeliveryPlace;
-        _draft.DeliveryAddress = existing.DeliveryAddress;
-        _draft.Currency = existing.Currency;
         _draft.Notes = existing.Notes;
         _draft.Items = existing.Items.Select(i => new OrderItemInput
         {

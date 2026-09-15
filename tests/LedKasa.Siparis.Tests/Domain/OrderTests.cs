@@ -26,19 +26,18 @@ public class OrderTests
     }
 
     [Fact]
-    public void Create_ShouldReject_EmptyDeliveryAddress()
+    public void Create_ShouldReject_InvalidDeliveryPlace()
     {
-        var blank = () => Order.Create(
+        var act = () => Order.Create(
             "LK-20260910-0001",
             "Ahmet",
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 12),
-            DeliveryPlace.Sirket,
-            "  ",
+            (DeliveryPlace)99,
             [OrderItem.Create(1, 80, 120, 1, 10)],
             "user-1");
 
-        blank.Should().Throw<DomainException>().WithMessage("*teslimat adresi*");
+        act.Should().Throw<DomainException>().WithMessage("*Teslim yeri*");
     }
 
     [Fact]
@@ -50,7 +49,6 @@ public class OrderTests
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 12),
             DeliveryPlace.Sirket,
-            "Organize Sanayi 1. Cadde No:12",
             [],
             "user-1");
 
@@ -138,8 +136,6 @@ public class OrderTests
             order.OrderDate,
             order.DeliveryDate,
             DeliveryPlace.Fabrika,
-            "Fabrika deposu",
-            Currency.Usd,
             null,
             "u1");
 
@@ -147,39 +143,18 @@ public class OrderTests
     }
 
     [Fact]
-    public void Create_ShouldDefaultCurrencyToUsd()
-    {
-        OrderFactory.Create().Currency.Should().Be(Currency.Usd);
-    }
-
-    [Fact]
-    public void Create_ShouldAcceptUsd()
-    {
-        OrderFactory.Create(currency: Currency.Usd).Currency.Should().Be(Currency.Usd);
-    }
-
-    [Fact]
-    public void Create_ShouldReject_InvalidCurrency()
-    {
-        var act = () => OrderFactory.Create(currency: (Currency)99);
-        act.Should().Throw<DomainException>().WithMessage("*Para birimi*");
-    }
-
-    [Fact]
-    public void UpdateHeader_ShouldChangeCurrency()
+    public void UpdateHeader_ShouldChangeDeliveryPlace()
     {
         var order = OrderFactory.Create();
         order.UpdateHeader(
             order.CustomerName,
             order.OrderDate,
             order.DeliveryDate,
-            order.DeliveryPlace,
-            order.DeliveryAddress,
-            Currency.Eur,
+            DeliveryPlace.Fabrika,
             null,
             "u1");
 
-        order.Currency.Should().Be(Currency.Eur);
+        order.DeliveryPlace.Should().Be(DeliveryPlace.Fabrika);
     }
 
     [Fact]
@@ -195,8 +170,7 @@ internal static class OrderFactory
     public static Order Create(
         string customerName = "Ahmet Yılmaz",
         DateOnly? orderDate = null,
-        DateOnly? deliveryDate = null,
-        Currency currency = Currency.Usd)
+        DateOnly? deliveryDate = null)
     {
         var order = orderDate ?? new DateOnly(2026, 9, 10);
         var delivery = deliveryDate ?? new DateOnly(2026, 9, 12);
@@ -206,9 +180,7 @@ internal static class OrderFactory
             order,
             delivery,
             DeliveryPlace.Sirket,
-            "Atatürk Cad. No:10 İstanbul",
             [OrderItem.Create(1, 80, 120, 2, 150m, [1], "köşe kesim")],
-            "user-1",
-            currency: currency);
+            "user-1");
     }
 }
