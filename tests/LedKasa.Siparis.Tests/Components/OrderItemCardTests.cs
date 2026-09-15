@@ -2,7 +2,6 @@ using Bunit;
 using FluentAssertions;
 using LedKasa.Siparis.Components.Shared;
 using LedKasa.Siparis.Features.Orders;
-using LedKasa.Siparis.Features.Orders.Domain;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
@@ -32,15 +31,14 @@ public class OrderItemCardTests : TestContext
         };
 
         var cut = RenderComponent<OrderItemCard>(p => p
-            .Add(x => x.Item, item)
-            .Add(x => x.Currency, Currency.Usd));
+            .Add(x => x.Item, item));
 
         cut.Markup.Should().Contain("CNC LED Kasa");
         cut.Markup.Should().Contain("Ölçü");
         cut.Markup.Should().Contain("123 × 12 cm");
         cut.Markup.Should().Contain("Adet");
         cut.Markup.Should().Contain(">2<");
-        cut.Markup.Should().Contain("15,00 $ × 2 = 30,00 $");
+        cut.Markup.Should().Contain("15,00 × 2 = 30,00");
         cut.Markup.Should().Contain("Köşe kesim");
     }
 
@@ -59,13 +57,11 @@ public class OrderItemCardTests : TestContext
 
         var cut = RenderComponent<OrderItemCard>(p => p
             .Add(x => x.Item, item)
-            .Add(x => x.Currency, Currency.Usd)
             .Add(x => x.ShowPrices, false));
 
         cut.Markup.Should().Contain("CNC LED Kasa");
         cut.Markup.Should().Contain("80 × 120 cm");
         cut.Markup.Should().NotContain("Fiyat");
         cut.Markup.Should().NotContain("15,00");
-        cut.Markup.Should().NotContain("$");
     }
 }

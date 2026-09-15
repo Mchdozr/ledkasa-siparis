@@ -39,12 +39,11 @@ else
                 <div class="lk-kv">
                     <span>Sipariş tarihi</span><strong>@TurkeyTime.FormatDate(_order.OrderDate)</strong>
                     <span>Teslim tarihi</span><strong>@TurkeyTime.FormatDate(_order.DeliveryDate)</strong>
-                    <span>Teslimat adresi</span><strong>@(_order.DeliveryAddress)</strong>
+                    <span>Teslim yeri</span><strong>@DisplayNames.Place(_order.DeliveryPlace)</strong>
                     <span>Durum</span><StatusChip Status="_order.Status" />
                     @if (CurrentUser.CanViewPrices)
                     {
-                        <span>Para birimi</span><strong>@DisplayNames.Currency(_order.Currency)</strong>
-                        <span>Toplam</span><strong>@TurkeyTime.FormatMoney(_order.GrandTotal, _order.Currency)</strong>
+                        <span>Toplam</span><strong>@TurkeyTime.FormatMoney(_order.GrandTotal)</strong>
                     }
                     <span>Not</span><strong>@(_order.Notes ?? "—")</strong>
                 </div>
@@ -52,7 +51,7 @@ else
 
             @foreach (var item in _order.Items)
             {
-                <OrderItemCard Item="item" Currency="_order.Currency" ShowPrices="CurrentUser.CanViewPrices" />
+                <OrderItemCard Item="item" ShowPrices="CurrentUser.CanViewPrices" />
             }
         </MudItem>
         <MudItem xs="12" md="4">

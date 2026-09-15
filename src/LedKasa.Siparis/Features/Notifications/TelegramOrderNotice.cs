@@ -19,9 +19,7 @@ public sealed record TelegramOrderNotice(
     DateOnly OrderDate,
     DateOnly DeliveryDate,
     DeliveryPlace Place,
-    string DeliveryAddress,
     string? Notes,
-    Currency Currency,
     decimal GrandTotal,
     string? CreatedBy,
     IReadOnlyList<TelegramOrderLine> Lines);

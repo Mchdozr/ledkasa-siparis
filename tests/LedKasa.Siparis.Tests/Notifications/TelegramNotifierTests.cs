@@ -72,7 +72,7 @@ public class TelegramNotifierTests
 
     private static TelegramOrderNotice Sample() =>
         new(1, "LK-1", "Ali", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 13),
-            DeliveryPlace.Sirket, "Adres", null, Currency.Try, 10, "Admin",
+            DeliveryPlace.Sirket, null, 10, "Admin",
             [new TelegramOrderLine("CNC LED Kasa", 10, 10, 1, 10, 10, null, [])]);
 
     private sealed class RecordingHandler : HttpMessageHandler

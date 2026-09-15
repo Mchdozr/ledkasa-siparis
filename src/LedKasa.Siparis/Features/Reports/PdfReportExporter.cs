@@ -103,7 +103,7 @@ public sealed class PdfReportExporter : IPdfReportExporter
                 row.Status,
                 row.ItemCount.ToString(),
                 row.TotalQuantity.ToString(),
-                TurkeyTime.FormatMoney(row.GrandTotal, row.Currency),
+                TurkeyTime.FormatMoney(row.GrandTotal),
                 row.ItemSummary
             };
 

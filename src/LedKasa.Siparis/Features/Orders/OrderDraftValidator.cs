@@ -10,17 +10,13 @@ public sealed class OrderDraftValidator : AbstractValidator<OrderDraft>
             .NotEmpty().WithMessage("Sipariş veren kişi zorunludur.")
             .MaximumLength(160);
 
-        RuleFor(x => x.DeliveryAddress)
-            .NotEmpty().WithMessage("Sipariş teslimat adresi zorunludur.")
-            .MaximumLength(400);
-
         RuleFor(x => x.DeliveryDate)
             .GreaterThanOrEqualTo(x => x.OrderDate)
             .WithMessage("Teslim tarihi sipariş tarihinden önce olamaz.");
 
-        RuleFor(x => x.Currency)
+        RuleFor(x => x.DeliveryPlace)
             .IsInEnum()
-            .WithMessage("Para birimi geçersiz.");
+            .WithMessage("Teslim yeri geçersiz.");
 
         RuleFor(x => x.Items)
             .NotEmpty().WithMessage("Siparişte en az bir kalem olmalıdır.");

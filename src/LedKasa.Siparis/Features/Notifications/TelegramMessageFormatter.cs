@@ -14,7 +14,6 @@ public static class TelegramMessageFormatter
         text.AppendLine($"👤 Sipariş veren kişi: {Esc(order.CustomerName)}");
         text.AppendLine($"📅 Sipariş tarihi: {TurkeyTime.FormatDate(order.OrderDate)}");
         text.AppendLine($"🚚 Teslim tarihi: {TurkeyTime.FormatDate(order.DeliveryDate)} · Teslim yeri: {Esc(DisplayNames.Place(order.Place))}");
-        text.AppendLine($"📍 Teslimat adresi: {Esc(order.DeliveryAddress)}");
         if (!string.IsNullOrWhiteSpace(order.Notes))
             text.AppendLine($"📝 Not: {Esc(order.Notes)}");
 

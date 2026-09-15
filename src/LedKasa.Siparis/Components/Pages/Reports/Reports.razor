@@ -89,7 +89,7 @@
                 <MudTd>@context.DeliveryPlace</MudTd>
                 <MudTd>@context.Status</MudTd>
                 <MudTd>@context.TotalQuantity</MudTd>
-                <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal, context.Currency)</MudTd>
+                <MudTd>@TurkeyTime.FormatMoney(context.GrandTotal)</MudTd>
                 <MudTd>@context.ItemSummary</MudTd>
             </RowTemplate>
         </MudTable>
@@ -101,7 +101,7 @@
             <MudPaper Class="lk-card pa-4 mb-3" Elevation="0">
                 <strong>@row.OrderNumber</strong>
                 <div>@row.CustomerName</div>
-                <small>@row.DeliveryPlace · @row.Status · @TurkeyTime.FormatMoney(row.GrandTotal, row.Currency) · @row.ItemSummary</small>
+                <small>@row.DeliveryPlace · @row.Status · @TurkeyTime.FormatMoney(row.GrandTotal) · @row.ItemSummary</small>
             </MudPaper>
         }
     </div>

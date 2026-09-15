@@ -46,7 +46,7 @@ public sealed class ExcelReportExporter : IExcelReportExporter
             sheet.Cell(row, 6).Value = item.Status;
             sheet.Cell(row, 7).Value = item.ItemCount;
             sheet.Cell(row, 8).Value = item.TotalQuantity;
-            sheet.Cell(row, 9).Value = TurkeyTime.FormatMoney(item.GrandTotal, item.Currency);
+            sheet.Cell(row, 9).Value = TurkeyTime.FormatMoney(item.GrandTotal);
             sheet.Cell(row, 10).Value = item.ItemSummary;
             row++;
         }

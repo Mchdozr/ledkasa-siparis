@@ -28,8 +28,7 @@ public class ReportServiceTests
         report.GrandTotal.Should().Be(25);
         report.Rows.Single().CustomerName.Should().Be("İçerde");
         report.Rows.Single().GrandTotal.Should().Be(25);
-        report.Rows.Single().Currency.Should().Be(Currency.Try);
-        report.FormattedGrandTotal.Should().Be("25,00 TL");
+        report.FormattedGrandTotal.Should().Be("25,00");
         report.Title.Should().Contain("Haftalık");
     }
 
@@ -53,7 +52,7 @@ public class ReportServiceTests
         report.GrandTotal.Should().Be(25);
         report.Rows.Should().ContainSingle(r => r.CustomerName == "Aktif");
         report.Rows.Should().NotContain(r => r.CustomerName == "İptal");
-        report.FormattedGrandTotal.Should().Be("25,00 TL");
+        report.FormattedGrandTotal.Should().Be("25,00");
     }
 
     [Fact]
@@ -121,28 +120,7 @@ public class ReportServiceTests
         text.Should().Contain(report.Rows[0].OrderNumber);
         text.Should().Contain("LEDKASA Sipariş Raporu");
         text.Should().Contain("Tutar");
-        text.Should().Contain("25,00 TL");
-    }
-
-    [Fact]
-    public async Task Excel_ShouldFormatUsdRow()
-    {
-        await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator(), new NullTelegramNotifier());
-        var draft = Draft("Usd", new DateOnly(2026, 9, 10));
-        draft.Currency = Currency.Usd;
-        await orders.CreateAsync(draft);
-        var report = await new ReportService(db).GetAsync(new ReportRequest
-        {
-            Period = ReportPeriod.Daily,
-            Anchor = new DateOnly(2026, 9, 10)
-        });
-
-        var excel = new ExcelReportExporter().Export(report);
-        using var book = new XLWorkbook(new MemoryStream(excel));
-        var text = book.Worksheet(1).RangeUsed()!.Cells().Select(c => c.GetString()).ToList();
-        text.Should().Contain("25,00 $");
-        report.FormattedGrandTotal.Should().Be("25,00 $");
+        text.Should().Contain("25,00");
     }
 
     [Fact]
@@ -154,7 +132,7 @@ public class ReportServiceTests
             OrderCount = 1,
             ItemCount = 2,
             TotalQuantity = 12,
-            FormattedGrandTotal = "1.250,00 $",
+            FormattedGrandTotal = "1.250,00",
             Rows =
             [
                 new ReportRow
@@ -168,7 +146,6 @@ public class ReportServiceTests
                     ItemCount = 2,
                     TotalQuantity = 12,
                     GrandTotal = 1250,
-                    Currency = Currency.Usd,
                     ItemSummary = "Kapaksız LED Kabinet 50x100 cm x4 · CNC LED Kasa 80x120 cm x8 · Rental LED Kabinet 64x48 cm x20"
                 }
             ]
@@ -185,8 +162,6 @@ public class ReportServiceTests
         OrderDate = date,
         DeliveryDate = date.AddDays(2),
         DeliveryPlace = DeliveryPlace.Sirket,
-        DeliveryAddress = "Teslimat adresi",
-        Currency = Currency.Try,
         Items = [new OrderItemInput { ProductId = 1, WidthCm = 50, HeightCm = 50, Quantity = 1, UnitPrice = 25 }]
     };
 }
