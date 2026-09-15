@@ -22,7 +22,7 @@ public static class Policies
         ],
         AppRoles.SiparisPersoneli =>
         [
-            OrdersView, OrdersEdit, OrdersChangeStatus
+            OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus
         ],
         AppRoles.Muhasebe =>
         [

@@ -18,13 +18,19 @@ public class PolicyTests
     }
 
     [Fact]
-    public void Personel_ShouldNotSeeReportsOrAdmin()
+    public void Personel_ShouldCreateOrdersAndChangeStatus_ButNotAdmin()
     {
         var policies = Policies.ForRole(AppRoles.SiparisPersoneli);
-        policies.Should().Contain(Policies.OrdersEdit);
-        policies.Should().NotContain(Policies.OrdersCreate);
+        policies.Should().BeEquivalentTo(
+        [
+            Policies.OrdersView,
+            Policies.OrdersCreate,
+            Policies.OrdersEdit,
+            Policies.OrdersChangeStatus
+        ]);
         policies.Should().NotContain(Policies.ReportsView);
         policies.Should().NotContain(Policies.AdminUsers);
+        policies.Should().NotContain(Policies.AdminFeatures);
     }
 
     [Fact]

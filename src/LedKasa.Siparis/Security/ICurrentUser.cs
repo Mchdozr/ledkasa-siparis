@@ -27,5 +27,21 @@ public sealed class CurrentUser : ICurrentUser
         ?? _http.HttpContext?.User.Identity?.Name;
     public string? UserName => _http.HttpContext?.User.Identity?.Name;
 
-    public bool CanCreateOrders => _http.HttpContext?.User.IsInRole(AppRoles.Yonetici) == true;
+    public bool CanCreateOrders
+    {
+        get
+        {
+            var user = _http.HttpContext?.User;
+            if (user?.Identity?.IsAuthenticated != true)
+                return false;
+
+            foreach (var role in AppRoles.All)
+            {
+                if (user.IsInRole(role) && Policies.ForRole(role).Contains(Policies.OrdersCreate))
+                    return true;
+            }
+
+            return false;
+        }
+    }
 }

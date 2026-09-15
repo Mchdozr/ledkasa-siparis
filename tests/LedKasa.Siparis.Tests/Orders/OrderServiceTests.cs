@@ -90,7 +90,7 @@ public class OrderServiceTests
     }
 
     [Fact]
-    public async Task StaffCreate_ShouldBeRejected()
+    public async Task UserWithoutCreatePermission_ShouldBeRejected()
     {
         await using var db = TestDb.Create();
         var staff = CreateService(db, canCreateOrders: false);
