@@ -1,14 +1,19 @@
 @page "/"
 @attribute [Authorize(Policy = Policies.OrdersView)]
-@rendermode InteractiveServer
 @inject IDashboardService DashboardService
+@inject ILogger<Dashboard> Logger
 
 <PageTitle>Panel — LEDKASA Sipariş</PageTitle>
 
 <h1 class="lk-page-title">Operasyon paneli</h1>
 <p class="lk-page-sub">Bugünün siparişleri, açık işler ve yaklaşan teslimler.</p>
 
-@if (_snapshot is null)
+@if (_loadError)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">Panel yüklenemedi. Yeniden deneyin.</MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadAsync">Yeniden dene</MudButton>
+}
+else if (_snapshot is null)
 {
     <MudProgressLinear Indeterminate="true" Color="Color.Secondary" />
 }
@@ -75,9 +80,22 @@ else
 
 @code {
     private DashboardSnapshot? _snapshot;
+    private bool _loadError;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
     {
-        _snapshot = await DashboardService.GetAsync();
+        _loadError = false;
+        _snapshot = null;
+        try
+        {
+            _snapshot = await DashboardService.GetAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Panel yüklenemedi");
+            _loadError = true;
+        }
     }
 }

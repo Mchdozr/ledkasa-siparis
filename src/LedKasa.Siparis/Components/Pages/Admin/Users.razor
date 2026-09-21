@@ -1,6 +1,5 @@
 @page "/admin/users"
 @attribute [Authorize(Policy = Policies.AdminUsers)]
-@rendermode InteractiveServer
 @inject IUserAdminService UsersApi
 @inject ISnackbar Snackbar
 @inject ICurrentUser CurrentUser

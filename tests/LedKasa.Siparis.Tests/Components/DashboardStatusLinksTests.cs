@@ -19,6 +19,7 @@ public class DashboardStatusLinksTests : TestContext
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddMudServices();
+        Services.AddLogging();
         var auth = this.AddTestAuthorization();
         auth.SetAuthorized("admin");
         auth.SetPolicies(Policies.OrdersView);

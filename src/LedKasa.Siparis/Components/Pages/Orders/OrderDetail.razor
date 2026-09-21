@@ -1,6 +1,5 @@
 @page "/orders/{Id:int}"
 @attribute [Authorize(Policy = Policies.OrdersView)]
-@rendermode InteractiveServer
 @inject IOrderService Orders
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
