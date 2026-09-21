@@ -1,7 +1,7 @@
 using LedKasa.Siparis.Common;
-using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
+using LedKasa.Siparis.Features.Reports;
 using Microsoft.EntityFrameworkCore;
 
 namespace LedKasa.Siparis.Features.Dashboard;
@@ -24,11 +24,11 @@ public interface IDashboardService
     Task<DashboardSnapshot> GetAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed class DashboardService : IDashboardService
+internal sealed class DashboardService : IDashboardService
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IReportingDbContext _db;
 
-    public DashboardService(ApplicationDbContext db)
+    public DashboardService(IReportingDbContext db)
     {
         _db = db;
     }

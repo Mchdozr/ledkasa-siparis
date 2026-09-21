@@ -10,7 +10,7 @@ public interface IPdfReportExporter
     byte[] Export(ReportResult report);
 }
 
-public sealed class PdfReportExporter : IPdfReportExporter
+internal sealed class PdfReportExporter : IPdfReportExporter
 {
     private static readonly XSolidBrush NavyBrush = new(XColor.FromArgb(0x0B, 0x1F, 0x3A));
     private static readonly XSolidBrush OrangeBrush = new(XColor.FromArgb(0xF4, 0x6F, 0x2C));

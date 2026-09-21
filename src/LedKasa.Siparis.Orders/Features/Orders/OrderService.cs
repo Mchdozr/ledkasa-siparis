@@ -1,6 +1,5 @@
 using FluentValidation;
 using LedKasa.Siparis.Common;
-using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Audit;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Security;
@@ -18,14 +17,14 @@ public interface IOrderService
     Task<PersonSuggestions> ListPersonSuggestionsAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed class OrderService : IOrderService
+internal sealed class OrderService : IOrderService
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IOrdersDbContext _db;
     private readonly ICurrentUser _currentUser;
     private readonly IValidator<OrderDraft> _validator;
 
     public OrderService(
-        ApplicationDbContext db,
+        IOrdersDbContext db,
         ICurrentUser currentUser,
         IValidator<OrderDraft> validator)
     {
@@ -143,7 +142,7 @@ public sealed class OrderService : IOrderService
         await _validator.ValidateAndThrowAsync(draft, cancellationToken);
 
         var order = await LoadTrackedAsync(id, cancellationToken);
-        _db.Entry(order).Property(x => x.RowVersion).OriginalValue = rowVersion;
+        _db.SetOriginalRowVersion(order, rowVersion);
 
         order.UpdateHeader(
             draft.CustomerName,
@@ -163,7 +162,7 @@ public sealed class OrderService : IOrderService
     public async Task ChangeStatusAsync(int id, OrderStatus next, DateTime rowVersion, CancellationToken cancellationToken = default)
     {
         var order = await LoadTrackedAsync(id, cancellationToken);
-        _db.Entry(order).Property(x => x.RowVersion).OriginalValue = rowVersion;
+        _db.SetOriginalRowVersion(order, rowVersion);
         var previous = order.Status;
         order.TransitionTo(next, _currentUser.UserId);
         AddAudit("OrderStatusChanged", "Order", order.Id.ToString(), $"{DisplayNames.Status(previous)} → {DisplayNames.Status(next)}");
@@ -172,10 +171,7 @@ public sealed class OrderService : IOrderService
 
     public async Task<PersonSuggestions> ListPersonSuggestionsAsync(CancellationToken cancellationToken = default)
     {
-        var users = await _db.Users.AsNoTracking()
-            .Where(u => u.IsActive)
-            .Select(u => u.DisplayName)
-            .ToListAsync(cancellationToken);
+        var users = await _db.ActiveUserDisplayNames.ToListAsync(cancellationToken);
 
         var customers = await _db.Orders.AsNoTracking()
             .Select(o => o.CustomerName)

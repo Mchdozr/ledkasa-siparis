@@ -1,4 +1,3 @@
-using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Audit;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Security;
@@ -21,12 +20,12 @@ public interface IProductService
     Task UpdateAsync(int id, string name, bool isActive, int sortOrder, CancellationToken cancellationToken = default);
 }
 
-public sealed class ProductService : IProductService
+internal sealed class ProductService : IProductService
 {
-    private readonly ApplicationDbContext _db;
+    private readonly ICatalogDbContext _db;
     private readonly ICurrentUser _currentUser;
 
-    public ProductService(ApplicationDbContext db, ICurrentUser currentUser)
+    public ProductService(ICatalogDbContext db, ICurrentUser currentUser)
     {
         _db = db;
         _currentUser = currentUser;

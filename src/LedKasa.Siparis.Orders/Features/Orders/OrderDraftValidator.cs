@@ -2,7 +2,7 @@ using FluentValidation;
 
 namespace LedKasa.Siparis.Features.Orders;
 
-public sealed class OrderDraftValidator : AbstractValidator<OrderDraft>
+internal sealed class OrderDraftValidator : AbstractValidator<OrderDraft>
 {
     public OrderDraftValidator()
     {
@@ -25,7 +25,7 @@ public sealed class OrderDraftValidator : AbstractValidator<OrderDraft>
     }
 }
 
-public sealed class OrderItemInputValidator : AbstractValidator<OrderItemInput>
+internal sealed class OrderItemInputValidator : AbstractValidator<OrderItemInput>
 {
     public OrderItemInputValidator()
     {

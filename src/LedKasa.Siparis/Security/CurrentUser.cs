@@ -2,15 +2,6 @@ using LedKasa.Siparis.Identity;
 
 namespace LedKasa.Siparis.Security;
 
-public interface ICurrentUser
-{
-    bool IsAuthenticated { get; }
-    string UserId { get; }
-    string? DisplayName { get; }
-    string? UserName { get; }
-    bool CanCreateOrders { get; }
-}
-
 public sealed class CurrentUser : ICurrentUser
 {
     private readonly IHttpContextAccessor _http;

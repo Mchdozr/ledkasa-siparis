@@ -23,7 +23,7 @@ Sunucu: Linux Plesk — MariaDB 10.4
 |---|---|
 | Uygulama kökü | `/siparis.ledkasa.com.tr/httpdocs` |
 | Belge kökü | `/siparis.ledkasa.com.tr/httpdocs/wwwroot` |
-| Başlatma dosyası | `LedKasa.Siparis.dll` |
+| Başlatma dosyası | `LedKasa.Siparis.dll` (yanında `LedKasa.Siparis.Shared.dll`, `Orders`, `Catalog`, `Reporting`, `Users`) |
 | Etkinleştirildi | işaretle |
 
 Ortam değişkenleri (Plesk .NET Core → Düzenle):
