@@ -15,6 +15,7 @@
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.11" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
   </ItemGroup>
@@ -23,8 +24,13 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
+    <ItemGroup>
     <ProjectReference Include="..\..\src\LedKasa.Siparis\LedKasa.Siparis.csproj" />
+    <ProjectReference Include="..\..\src\LedKasa.Siparis.Catalog\LedKasa.Siparis.Catalog.csproj" />
+    <ProjectReference Include="..\..\src\LedKasa.Siparis.Orders\LedKasa.Siparis.Orders.csproj" />
+    <ProjectReference Include="..\..\src\LedKasa.Siparis.Reporting\LedKasa.Siparis.Reporting.csproj" />
+    <ProjectReference Include="..\..\src\LedKasa.Siparis.Shared\LedKasa.Siparis.Shared.csproj" />
+    <ProjectReference Include="..\..\src\LedKasa.Siparis.Users\LedKasa.Siparis.Users.csproj" />
   </ItemGroup>
 
 </Project>

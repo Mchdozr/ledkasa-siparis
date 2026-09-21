@@ -40,7 +40,7 @@ public interface IUserAdminService
     Task SetRoleAsync(string userId, string role, CancellationToken cancellationToken = default);
 }
 
-public sealed class UserAdminService : IUserAdminService
+internal sealed class UserAdminService : IUserAdminService
 {
     private readonly UserManager<ApplicationUser> _users;
     private readonly RoleManager<IdentityRole> _roles;

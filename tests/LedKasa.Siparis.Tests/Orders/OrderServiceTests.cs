@@ -169,11 +169,11 @@ public class OrderServiceTests
 
         await service.CreateAsync(Draft("Bugun", today, today.AddDays(10)));
         await service.CreateAsync(Draft("DunAcik", today.AddDays(-1), week.To));
-        var teslimId = await service.CreateAsync(Draft("Teslim", week.From, week.From));
+        var teslimId = await service.CreateAsync(Draft("Teslim", today.AddDays(-2), week.From));
         await MoveTo(service, teslimId, OrderStatus.TeslimEdildi);
         var gecikenId = await service.CreateAsync(Draft("Geciken", week.From.AddDays(-10), week.From.AddDays(-1)));
         await MoveTo(service, gecikenId, OrderStatus.Onaylandi);
-        var iptalId = await service.CreateAsync(Draft("IptalHafta", week.From, week.From));
+        var iptalId = await service.CreateAsync(Draft("IptalHafta", today.AddDays(-2), week.From));
         await MoveTo(service, iptalId, OrderStatus.Iptal);
 
         (await Names(service, scope: OrderListScope.Today)).Should().Equal("Bugun");

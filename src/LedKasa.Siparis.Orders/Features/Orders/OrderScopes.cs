@@ -1,5 +1,5 @@
+using LedKasa.Siparis.Common;
 using LedKasa.Siparis.Features.Orders.Domain;
-using LedKasa.Siparis.Features.Reports;
 
 namespace LedKasa.Siparis.Features.Orders;
 
@@ -70,7 +70,7 @@ public static class OrderScopes
 
     private static IQueryable<Order> ApplyWeek(IQueryable<Order> query, DateOnly today)
     {
-        var week = ReportPeriodCalculator.GetRange(ReportPeriod.Weekly, today);
+        var week = IsoWeekRange.Containing(today);
         return query.Where(o =>
             o.DeliveryDate >= week.From &&
             o.DeliveryDate <= week.To &&

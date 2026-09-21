@@ -1,6 +1,5 @@
 using LedKasa.Siparis.Features.Orders.Domain;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace LedKasa.Siparis.Identity;
 

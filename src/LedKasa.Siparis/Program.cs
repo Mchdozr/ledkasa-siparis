@@ -1,9 +1,7 @@
 using System.Globalization;
-using FluentValidation;
 using LedKasa.Siparis.Components;
 using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Catalog;
-using LedKasa.Siparis.Features.Dashboard;
 using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Features.Reports;
@@ -38,7 +36,6 @@ builder.Services.Configure<CircuitOptions>(options =>
 builder.Services.AddMudServices();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddValidatorsFromAssemblyContaining<OrderDraftValidator>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection tanımlı değil.");
@@ -83,13 +80,13 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddAuthorization(options => options.AddAppPolicies());
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IReportService, ReportService>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<IUserAdminService, UserAdminService>();
-builder.Services.AddSingleton<IExcelReportExporter, ExcelReportExporter>();
-builder.Services.AddSingleton<IPdfReportExporter, PdfReportExporter>();
+builder.Services.AddScoped<IOrdersDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+builder.Services.AddScoped<ICatalogDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+builder.Services.AddScoped<IReportingDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+builder.Services.AddOrdersModule();
+builder.Services.AddCatalogModule();
+builder.Services.AddReportingModule();
+builder.Services.AddUsersModule();
 
 var app = builder.Build();
 

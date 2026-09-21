@@ -1,4 +1,3 @@
-using LedKasa.Siparis.Data;
 using LedKasa.Siparis.Features.Orders.Domain;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,11 +8,11 @@ public interface IReportService
     Task<ReportResult> GetAsync(ReportRequest request, CancellationToken cancellationToken = default);
 }
 
-public sealed class ReportService : IReportService
+internal sealed class ReportService : IReportService
 {
-    private readonly ApplicationDbContext _db;
+    private readonly IReportingDbContext _db;
 
-    public ReportService(ApplicationDbContext db)
+    public ReportService(IReportingDbContext db)
     {
         _db = db;
     }

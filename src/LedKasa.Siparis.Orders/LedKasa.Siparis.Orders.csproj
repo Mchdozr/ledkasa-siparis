@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LedKasa.Siparis.Catalog\LedKasa.Siparis.Catalog.csproj" />
+    <ProjectReference Include="..\LedKasa.Siparis.Shared\LedKasa.Siparis.Shared.csproj" />
+  </ItemGroup>
+</Project>

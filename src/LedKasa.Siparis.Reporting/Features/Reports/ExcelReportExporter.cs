@@ -8,7 +8,7 @@ public interface IExcelReportExporter
     byte[] Export(ReportResult report);
 }
 
-public sealed class ExcelReportExporter : IExcelReportExporter
+internal sealed class ExcelReportExporter : IExcelReportExporter
 {
     public byte[] Export(ReportResult report)
     {
