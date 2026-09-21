@@ -3,10 +3,16 @@
 @inject IOrderService Orders
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject ILogger<OrderDetail> Logger
 
 <PageTitle>Sipariş detayı — LEDKASA</PageTitle>
 
-@if (_order is null && !_missing)
+@if (_loadError)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">Sipariş yüklenemedi. Yeniden deneyin.</MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadAsync">Yeniden dene</MudButton>
+}
+else if (_order is null && !_missing)
 {
     <MudProgressLinear Indeterminate="true" Color="Color.Secondary" />
 }
@@ -79,11 +85,25 @@ else
 
     private OrderDetailDto? _order;
     private bool _missing;
+    private bool _loadError;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
     {
-        _order = await Orders.GetAsync(Id);
-        _missing = _order is null;
+        _loadError = false;
+        _missing = false;
+        _order = null;
+        try
+        {
+            _order = await Orders.GetAsync(Id);
+            _missing = _order is null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Sipariş detayı yüklenemedi");
+            _loadError = true;
+        }
     }
 
     private async Task ChangeStatus(OrderStatus next)

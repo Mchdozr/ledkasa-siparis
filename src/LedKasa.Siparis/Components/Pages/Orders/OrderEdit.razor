@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ICurrentUser CurrentUser
+@inject ILogger<OrderEdit> Logger
 
 <PageTitle>@(Id is null ? "Yeni sipariş" : "Sipariş düzenle") — LEDKASA</PageTitle>
 
@@ -14,6 +15,17 @@
             BackHref="@(Id is null ? "/orders" : $"/orders/{Id}")"
             Subtitle="Ürün, ölçü, yön ve teslim bilgileri." />
 
+@if (_loadError)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">Sipariş formu yüklenemedi. Yeniden deneyin.</MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RetryAsync">Yeniden dene</MudButton>
+}
+else if (!_loaded)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Secondary" />
+}
+else
+{
 <EditForm Model="_draft" OnValidSubmit="SaveAsync">
     <DataAnnotationsValidator />
     <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
@@ -111,6 +123,7 @@
         <MudButton Variant="Variant.Text" Href="/orders">Vazgeç</MudButton>
     </div>
 </EditForm>
+}
 
 @code {
     [Parameter] public int? Id { get; set; }
@@ -126,52 +139,70 @@
     private IReadOnlyList<ProductDto> _products = [];
     private DateTime _rowVersion;
     private bool _saving;
+    private bool _loaded;
+    private bool _loadError;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private Task RetryAsync() => LoadAsync();
+
+    private async Task LoadAsync()
     {
-        if (Id is null && !CurrentUser.CanCreateOrders)
+        _loadError = false;
+        _loaded = false;
+        try
         {
-            Navigation.NavigateTo("/orders");
-            return;
+            if (Id is null && !CurrentUser.CanCreateOrders)
+            {
+                Navigation.NavigateTo("/orders");
+                return;
+            }
+
+            _products = await ProductsApi.ListAsync(activeOnly: true);
+            _orderDate = _draft.OrderDate.ToDateTime(TimeOnly.MinValue);
+            _deliveryDate = _draft.DeliveryDate.ToDateTime(TimeOnly.MinValue);
+
+            if (Id is null)
+            {
+                foreach (var item in _draft.Items)
+                    item.ProductId = CncProductId;
+                _loaded = true;
+                return;
+            }
+
+            var existing = await Orders.GetAsync(Id.Value);
+            if (existing is null)
+            {
+                Navigation.NavigateTo("/orders");
+                return;
+            }
+
+            _draft.CustomerName = existing.CustomerName;
+            _draft.OrderDate = existing.OrderDate;
+            _draft.DeliveryDate = existing.DeliveryDate;
+            _draft.DeliveryPlace = existing.DeliveryPlace;
+            _draft.Notes = existing.Notes;
+            _draft.Items = existing.Items.Select(i => new OrderItemInput
+            {
+                Id = i.Id,
+                ProductId = i.ProductId,
+                WidthCm = i.WidthCm,
+                HeightCm = i.HeightCm,
+                DepthCm = i.DepthCm,
+                Quantity = i.Quantity,
+                Side = i.Side,
+                Note = i.Note
+            }).ToList();
+            _rowVersion = existing.RowVersion;
+            _orderDate = existing.OrderDate.ToDateTime(TimeOnly.MinValue);
+            _deliveryDate = existing.DeliveryDate.ToDateTime(TimeOnly.MinValue);
+            _loaded = true;
         }
-
-        _products = await ProductsApi.ListAsync(activeOnly: true);
-        _orderDate = _draft.OrderDate.ToDateTime(TimeOnly.MinValue);
-        _deliveryDate = _draft.DeliveryDate.ToDateTime(TimeOnly.MinValue);
-
-        if (Id is null)
+        catch (Exception ex)
         {
-            foreach (var item in _draft.Items)
-                item.ProductId = CncProductId;
-            return;
+            Logger.LogError(ex, "Sipariş formu yüklenemedi");
+            _loadError = true;
         }
-
-        var existing = await Orders.GetAsync(Id.Value);
-        if (existing is null)
-        {
-            Navigation.NavigateTo("/orders");
-            return;
-        }
-
-        _draft.CustomerName = existing.CustomerName;
-        _draft.OrderDate = existing.OrderDate;
-        _draft.DeliveryDate = existing.DeliveryDate;
-        _draft.DeliveryPlace = existing.DeliveryPlace;
-        _draft.Notes = existing.Notes;
-        _draft.Items = existing.Items.Select(i => new OrderItemInput
-        {
-            Id = i.Id,
-            ProductId = i.ProductId,
-            WidthCm = i.WidthCm,
-            HeightCm = i.HeightCm,
-            DepthCm = i.DepthCm,
-            Quantity = i.Quantity,
-            Side = i.Side,
-            Note = i.Note
-        }).ToList();
-        _rowVersion = existing.RowVersion;
-        _orderDate = existing.OrderDate.ToDateTime(TimeOnly.MinValue);
-        _deliveryDate = existing.DeliveryDate.ToDateTime(TimeOnly.MinValue);
     }
 
     private void OnOrderDate(DateTime? value)

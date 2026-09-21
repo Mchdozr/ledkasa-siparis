@@ -85,35 +85,36 @@
             await BrowserViewport.SubscribeAsync(this, fireImmediately: true);
             _subscribed = true;
         }
-        catch (InvalidOperationException)
-        {
-        }
-        catch (JSDisconnectedException)
-        {
-        }
-        catch (TaskCanceledException)
+        catch (Exception)
         {
         }
     }
 
-    public Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs args)
+    public async Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs args)
     {
-        var desktop = IsDesktop(args.Breakpoint);
-        if (!_drawerReady)
+        try
         {
-            _drawerOpen = desktop;
-            _drawerReady = true;
+            var desktop = IsDesktop(args.Breakpoint);
+            if (!_drawerReady)
+            {
+                _drawerOpen = desktop;
+                _drawerReady = true;
+                _wasDesktop = desktop;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            if (desktop)
+                _drawerOpen = true;
+            else if (_wasDesktop)
+                _drawerOpen = false;
+
             _wasDesktop = desktop;
-            return InvokeAsync(StateHasChanged);
+            await InvokeAsync(StateHasChanged);
         }
-
-        if (desktop)
-            _drawerOpen = true;
-        else if (_wasDesktop)
-            _drawerOpen = false;
-
-        _wasDesktop = desktop;
-        return InvokeAsync(StateHasChanged);
+        catch (Exception)
+        {
+        }
     }
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
@@ -139,13 +140,7 @@
         {
             await BrowserViewport.UnsubscribeAsync(this);
         }
-        catch (JSDisconnectedException)
-        {
-        }
-        catch (InvalidOperationException)
-        {
-        }
-        catch (TaskCanceledException)
+        catch (Exception)
         {
         }
     }
