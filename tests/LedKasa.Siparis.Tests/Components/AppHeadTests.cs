@@ -13,6 +13,14 @@ public class AppHeadTests
     }
 
     [Fact]
+    public void ShouldDisableInteractiveServerPrerender()
+    {
+        var html = File.ReadAllText(FindAppRazor());
+        html.Should().Contain("prerender: false");
+        html.Should().NotContain("@rendermode=\"InteractiveServer\"");
+    }
+
+    [Fact]
     public void ShouldDeclareModernAndAppleWebAppCapable()
     {
         var html = File.ReadAllText(FindAppRazor());

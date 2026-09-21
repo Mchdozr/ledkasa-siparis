@@ -10,14 +10,14 @@ public static class DisplayNames
         OrderStatus.Hazir => "Hazır",
         OrderStatus.TeslimEdildi => "Teslim Edildi",
         OrderStatus.Iptal => "İptal",
-        _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
+        _ => "—"
     };
 
     public static string Place(DeliveryPlace place) => place switch
     {
         DeliveryPlace.Sirket => "Şirket",
         DeliveryPlace.Fabrika => "Fabrika",
-        _ => throw new ArgumentOutOfRangeException(nameof(place), place, null)
+        _ => "—"
     };
 
     public static string Sort(OrderSort sort) => sort switch
@@ -26,14 +26,14 @@ public static class DisplayNames
         OrderSort.OldestFirst => "Eskiden yeniye",
         OrderSort.NearestDelivery => "En yakın teslim",
         OrderSort.FarthestDelivery => "En uzak teslim",
-        _ => throw new ArgumentOutOfRangeException(nameof(sort), sort, null)
+        _ => "—"
     };
 
     public static string Side(PanelSide side) => side switch
     {
         PanelSide.TekYon => "Tek yön",
         PanelSide.CiftYon => "Çift yön",
-        _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
+        _ => "—"
     };
 
     public static string Size(int widthCm, int heightCm, int depthCm) =>

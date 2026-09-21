@@ -16,6 +16,25 @@ public class OrderListQueryTests
     }
 
     [Fact]
+    public void ApplyQuery_ShouldSetIptal()
+    {
+        var filter = new OrderListFilter();
+        OrderScopes.ApplyQuery(filter, (int)OrderStatus.Iptal, null);
+        filter.Status.Should().Be(OrderStatus.Iptal);
+        filter.Scope.Should().Be(OrderListScope.None);
+    }
+
+    [Fact]
+    public void ApplyQuery_ShouldIgnoreUnknownStatus()
+    {
+        var filter = new OrderListFilter { Status = OrderStatus.Yeni };
+        OrderScopes.ApplyQuery(filter, 0, null);
+        filter.Status.Should().BeNull();
+        OrderScopes.ApplyQuery(filter, 99, null);
+        filter.Status.Should().BeNull();
+    }
+
+    [Fact]
     public void ApplyQuery_ShouldPreferScopeOverStatus()
     {
         var filter = new OrderListFilter();
