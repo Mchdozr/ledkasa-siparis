@@ -10,17 +10,18 @@ public interface IReportService
 
 internal sealed class ReportService : IReportService
 {
-    private readonly IReportingDbContext _db;
+    private readonly IReportingDbContextFactory _dbFactory;
 
-    public ReportService(IReportingDbContext db)
+    public ReportService(IReportingDbContextFactory dbFactory)
     {
-        _db = db;
+        _dbFactory = dbFactory;
     }
 
     public async Task<ReportResult> GetAsync(ReportRequest request, CancellationToken cancellationToken = default)
     {
+        await using var db = _dbFactory.CreateDbContext();
         var (from, to) = ReportPeriodCalculator.GetRange(request.Period, request.Anchor);
-        var query = _db.Orders.AsNoTracking()
+        var query = db.Orders.AsNoTracking()
             .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
             .AsQueryable();

@@ -88,6 +88,17 @@ public class ModularMonolithTests
     }
 
     [Fact]
+    public void Db_contracts_are_disposable_and_created_per_call()
+    {
+        typeof(IAsyncDisposable).IsAssignableFrom(typeof(IOrdersDbContext)).Should().BeTrue();
+        typeof(IAsyncDisposable).IsAssignableFrom(typeof(ICatalogDbContext)).Should().BeTrue();
+        typeof(IAsyncDisposable).IsAssignableFrom(typeof(IReportingDbContext)).Should().BeTrue();
+        AssemblyOf(typeof(IOrdersDbContextFactory)).Should().Be("LedKasa.Siparis.Orders");
+        AssemblyOf(typeof(ICatalogDbContextFactory)).Should().Be("LedKasa.Siparis.Catalog");
+        AssemblyOf(typeof(IReportingDbContextFactory)).Should().Be("LedKasa.Siparis.Reporting");
+    }
+
+    [Fact]
     public void Order_pages_do_not_use_reports_or_user_admin()
     {
         var assembly = typeof(Program).Assembly;

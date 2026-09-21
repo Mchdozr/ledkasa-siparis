@@ -19,26 +19,27 @@ public interface IOrderService
 
 internal sealed class OrderService : IOrderService
 {
-    private readonly IOrdersDbContext _db;
+    private readonly IOrdersDbContextFactory _dbFactory;
     private readonly ICurrentUser _currentUser;
     private readonly IValidator<OrderDraft> _validator;
 
     public OrderService(
-        IOrdersDbContext db,
+        IOrdersDbContextFactory dbFactory,
         ICurrentUser currentUser,
         IValidator<OrderDraft> validator)
     {
-        _db = db;
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
         _validator = validator;
     }
 
     public async Task<PagedResult<OrderListItemDto>> ListAsync(OrderListFilter filter, CancellationToken cancellationToken = default)
     {
+        await using var db = _dbFactory.CreateDbContext();
         var page = Math.Max(1, filter.Page);
         var pageSize = Math.Clamp(filter.PageSize, 5, 100);
 
-        var query = _db.Orders.AsNoTracking().Include(o => o.Items).AsQueryable();
+        var query = db.Orders.AsNoTracking().Include(o => o.Items).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
@@ -103,7 +104,8 @@ internal sealed class OrderService : IOrderService
 
     public async Task<OrderDetailDto?> GetAsync(int id, CancellationToken cancellationToken = default)
     {
-        var order = await _db.Orders
+        await using var db = _dbFactory.CreateDbContext();
+        var order = await db.Orders
             .AsNoTracking()
             .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
@@ -119,8 +121,9 @@ internal sealed class OrderService : IOrderService
 
         await _validator.ValidateAndThrowAsync(draft, cancellationToken);
 
+        await using var db = _dbFactory.CreateDbContext();
         var items = draft.Items.Select(ToItem).ToList();
-        var number = await NextNumberAsync(draft.OrderDate, cancellationToken);
+        var number = await NextNumberAsync(db, draft.OrderDate, cancellationToken);
         var order = Order.Create(
             number,
             draft.CustomerName,
@@ -131,9 +134,9 @@ internal sealed class OrderService : IOrderService
             _currentUser.UserId,
             draft.Notes);
 
-        _db.Orders.Add(order);
-        AddAudit("OrderCreated", "Order", number, $"Müşteri: {order.CustomerName}");
-        await _db.SaveChangesAsync(cancellationToken);
+        db.Orders.Add(order);
+        AddAudit(db, "OrderCreated", "Order", number, $"Müşteri: {order.CustomerName}");
+        await db.SaveChangesAsync(cancellationToken);
         return order.Id;
     }
 
@@ -141,8 +144,9 @@ internal sealed class OrderService : IOrderService
     {
         await _validator.ValidateAndThrowAsync(draft, cancellationToken);
 
-        var order = await LoadTrackedAsync(id, cancellationToken);
-        _db.SetOriginalRowVersion(order, rowVersion);
+        await using var db = _dbFactory.CreateDbContext();
+        var order = await LoadTrackedAsync(db, id, cancellationToken);
+        db.SetOriginalRowVersion(order, rowVersion);
 
         order.UpdateHeader(
             draft.CustomerName,
@@ -152,28 +156,30 @@ internal sealed class OrderService : IOrderService
             draft.Notes,
             _currentUser.UserId);
 
-        _db.OrderItems.RemoveRange(order.Items);
+        db.OrderItems.RemoveRange(order.Items);
         order.ReplaceItems(draft.Items.Select(ToItem), _currentUser.UserId);
 
-        AddAudit("OrderUpdated", "Order", order.Id.ToString(), order.OrderNumber);
-        await _db.SaveChangesAsync(cancellationToken);
+        AddAudit(db, "OrderUpdated", "Order", order.Id.ToString(), order.OrderNumber);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task ChangeStatusAsync(int id, OrderStatus next, DateTime rowVersion, CancellationToken cancellationToken = default)
     {
-        var order = await LoadTrackedAsync(id, cancellationToken);
-        _db.SetOriginalRowVersion(order, rowVersion);
+        await using var db = _dbFactory.CreateDbContext();
+        var order = await LoadTrackedAsync(db, id, cancellationToken);
+        db.SetOriginalRowVersion(order, rowVersion);
         var previous = order.Status;
         order.TransitionTo(next, _currentUser.UserId);
-        AddAudit("OrderStatusChanged", "Order", order.Id.ToString(), $"{DisplayNames.Status(previous)} → {DisplayNames.Status(next)}");
-        await _db.SaveChangesAsync(cancellationToken);
+        AddAudit(db, "OrderStatusChanged", "Order", order.Id.ToString(), $"{DisplayNames.Status(previous)} → {DisplayNames.Status(next)}");
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<PersonSuggestions> ListPersonSuggestionsAsync(CancellationToken cancellationToken = default)
     {
-        var users = await _db.ActiveUserDisplayNames.ToListAsync(cancellationToken);
+        await using var db = _dbFactory.CreateDbContext();
+        var users = await db.ActiveUserDisplayNames.ToListAsync(cancellationToken);
 
-        var customers = await _db.Orders.AsNoTracking()
+        var customers = await db.Orders.AsNoTracking()
             .Select(o => o.CustomerName)
             .ToListAsync(cancellationToken);
 
@@ -182,19 +188,19 @@ internal sealed class OrderService : IOrderService
         return new PersonSuggestions(previous, all);
     }
 
-    private async Task<Order> LoadTrackedAsync(int id, CancellationToken cancellationToken)
+    private static async Task<Order> LoadTrackedAsync(IOrdersDbContext db, int id, CancellationToken cancellationToken)
     {
-        var order = await _db.Orders
+        var order = await db.Orders
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
         return order ?? throw new DomainException("Sipariş bulunamadı.");
     }
 
-    private async Task<string> NextNumberAsync(DateOnly orderDate, CancellationToken cancellationToken)
+    private static async Task<string> NextNumberAsync(IOrdersDbContext db, DateOnly orderDate, CancellationToken cancellationToken)
     {
         var prefix = $"LK-{orderDate:yyyyMMdd}-";
-        var last = await _db.Orders
+        var last = await db.Orders
             .Where(o => o.OrderNumber.StartsWith(prefix))
             .Select(o => o.OrderNumber)
             .OrderByDescending(n => n)
@@ -220,9 +226,9 @@ internal sealed class OrderService : IOrderService
     private static OrderItem ToItem(OrderItemInput input) =>
         OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.DepthCm, input.Quantity, input.Side, input.Note);
 
-    private void AddAudit(string action, string entityType, string entityId, string? details)
+    private void AddAudit(IOrdersDbContext db, string action, string entityType, string entityId, string? details)
     {
-        _db.AuditLogs.Add(new AuditLog
+        db.AuditLogs.Add(new AuditLog
         {
             Action = action,
             EntityType = entityType,

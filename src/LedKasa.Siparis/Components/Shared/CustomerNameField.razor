@@ -38,7 +38,14 @@
 
     private async Task LoadAsync()
     {
-        _suggestions = await Orders.ListPersonSuggestionsAsync();
+        try
+        {
+            _suggestions = await Orders.ListPersonSuggestionsAsync();
+        }
+        catch (Exception)
+        {
+            _suggestions = new PersonSuggestions([], []);
+        }
     }
 
     private async Task<IEnumerable<string>> SearchAsync(string value, CancellationToken _)
