@@ -1,7 +1,6 @@
 @page "/orders/new"
 @page "/orders/{Id:int}/edit"
 @attribute [Authorize(Policy = Policies.OrdersEdit)]
-@rendermode InteractiveServer
 @inject IOrderService Orders
 @inject IProductService ProductsApi
 @inject NavigationManager Navigation

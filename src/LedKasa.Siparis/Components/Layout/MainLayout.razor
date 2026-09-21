@@ -3,11 +3,12 @@
 @implements IAsyncDisposable
 @using LedKasa.Siparis.Theming
 @inject IBrowserViewportService BrowserViewport
+@inject NavigationManager Navigation
 
-<MudThemeProvider Theme="LedKasaTheme.Create()" @rendermode="InteractiveServer" />
-<MudPopoverProvider @rendermode="InteractiveServer" />
-<MudDialogProvider @rendermode="InteractiveServer" />
-<MudSnackbarProvider @rendermode="InteractiveServer" />
+<MudThemeProvider Theme="LedKasaTheme.Create()" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
 <MudLayout>
     <MudAppBar Elevation="0" Class="lk-appbar">
@@ -44,7 +45,15 @@
 
     <MudMainContent Class="lk-main">
         <div class="lk-page">
-            @Body
+            <ErrorBoundary @ref="_errorBoundary">
+                <ChildContent>
+                    @Body
+                </ChildContent>
+                <ErrorContent>
+                    <MudAlert Severity="Severity.Error" Class="mb-4">Bir hata oluştu. Yeniden deneyin.</MudAlert>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RecoverError">Yeniden dene</MudButton>
+                </ErrorContent>
+            </ErrorBoundary>
         </div>
         <BottomNav />
     </MudMainContent>
@@ -55,10 +64,16 @@
     private bool _drawerReady;
     private bool _subscribed;
     private bool _wasDesktop;
+    private ErrorBoundary? _errorBoundary;
 
     public Guid Id { get; } = Guid.NewGuid();
 
     private string DrawerClass => _drawerReady ? "lk-drawer lk-drawer-ready" : "lk-drawer";
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -97,8 +112,20 @@
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 
+    private void RecoverError() => _errorBoundary?.Recover();
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        _ = InvokeAsync(() =>
+        {
+            _errorBoundary?.Recover();
+            StateHasChanged();
+        });
+    }
+
     public async ValueTask DisposeAsync()
     {
+        Navigation.LocationChanged -= OnLocationChanged;
         if (_subscribed)
             await BrowserViewport.UnsubscribeAsync(this);
     }

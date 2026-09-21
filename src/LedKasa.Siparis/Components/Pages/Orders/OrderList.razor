@@ -1,8 +1,8 @@
 @page "/orders"
 @attribute [Authorize(Policy = Policies.OrdersView)]
-@rendermode InteractiveServer
 @inject IOrderService Orders
 @inject NavigationManager Navigation
+@inject ILogger<OrderList> Logger
 
 <PageTitle>Siparişler — LEDKASA</PageTitle>
 
@@ -59,6 +59,11 @@
 @if (_loading)
 {
     <MudProgressLinear Indeterminate="true" Color="Color.Secondary" />
+}
+else if (_loadError)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">Siparişler yüklenemedi. Yeniden deneyin.</MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="RetryAsync">Yeniden dene</MudButton>
 }
 else if (_result is { TotalCount: 0 })
 {
@@ -120,6 +125,7 @@ else if (_result is not null)
     private DateTime? _from;
     private PagedResult<OrderListItemDto>? _result;
     private bool _loading = true;
+    private bool _loadError;
 
     private int PageCount => _result is null || _result.PageSize == 0
         ? 1
@@ -152,6 +158,8 @@ else if (_result is not null)
 
     private Task ApplyFiltersAsync() => SearchAsync();
 
+    private Task RetryAsync() => SearchAsync(keepScope: true);
+
     private async Task OnSearchKey(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -173,16 +181,43 @@ else if (_result is not null)
         }
 
         _loading = true;
+        _loadError = false;
         _filter.From = _from is null ? null : DateOnly.FromDateTime(_from.Value);
         _filter.Page = 1;
-        _result = await Orders.ListAsync(_filter);
-        _loading = false;
+        try
+        {
+            _result = await Orders.ListAsync(_filter);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Sipariş listesi yüklenemedi");
+            _loadError = true;
+            _result = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private async Task OnPage(int page)
     {
         _filter.Page = page;
-        _result = await Orders.ListAsync(_filter);
+        _loading = true;
+        _loadError = false;
+        try
+        {
+            _result = await Orders.ListAsync(_filter);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Sipariş listesi sayfası yüklenemedi");
+            _loadError = true;
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private void Open(int id) => Navigation.NavigateTo($"/orders/{id}");

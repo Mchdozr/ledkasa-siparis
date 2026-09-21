@@ -1,6 +1,5 @@
 @page "/admin/products"
 @attribute [Authorize(Policy = Policies.AdminFeatures)]
-@rendermode InteractiveServer
 @inject IProductService ProductsApi
 @inject ISnackbar Snackbar
 
