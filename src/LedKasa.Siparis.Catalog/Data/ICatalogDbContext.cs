@@ -4,9 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LedKasa.Siparis.Features.Catalog;
 
-public interface ICatalogDbContext
+public interface ICatalogDbContext : IAsyncDisposable
 {
     DbSet<Product> Products { get; }
     DbSet<AuditLog> AuditLogs { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+}
+
+public interface ICatalogDbContextFactory
+{
+    ICatalogDbContext CreateDbContext();
 }

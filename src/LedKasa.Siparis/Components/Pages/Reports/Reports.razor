@@ -2,6 +2,7 @@
 @attribute [Authorize(Policy = Policies.ReportsView)]
 @inject IReportService ReportsApi
 @inject NavigationManager Navigation
+@inject ILogger<Reports> Logger
 
 <PageTitle>Liste raporları — LEDKASA</PageTitle>
 
@@ -52,7 +53,11 @@
     </MudGrid>
 </MudPaper>
 
-@if (_result is not null)
+@if (_loadError)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">Rapor yüklenemedi. Yeniden deneyin.</MudAlert>
+}
+else if (_result is not null)
 {
     <MudGrid Spacing="2" Class="mb-4">
         <MudItem xs="6" md="3"><StatCard Title="Sipariş" Value="@_result.OrderCount" /></MudItem>
@@ -111,6 +116,7 @@
     private IEnumerable<OrderStatus> _statuses = Enum.GetValues<OrderStatus>().Where(s => s != OrderStatus.Iptal).ToHashSet();
     private DateTime? _anchor = TurkeyTime.Today.ToDateTime(TimeOnly.MinValue);
     private ReportResult? _result;
+    private bool _loadError;
     private int _page = 1;
 
     private IReadOnlyList<ReportRow> PagedRows =>
@@ -134,7 +140,17 @@
     {
         _request.Statuses = _statuses.ToList();
         _page = 1;
-        _result = await ReportsApi.GetAsync(_request);
+        _loadError = false;
+        try
+        {
+            _result = await ReportsApi.GetAsync(_request);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Rapor yüklenemedi");
+            _loadError = true;
+            _result = null;
+        }
     }
 
     private void OnPage(int page) => _page = page;

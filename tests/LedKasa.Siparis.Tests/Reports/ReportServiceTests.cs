@@ -12,12 +12,12 @@ public class ReportServiceTests
     [Fact]
     public async Task WeeklyReport_ShouldIncludeOnlyMatchingOrders()
     {
-        await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        await using var store = TestDb.CreateStore();
+        var orders = new OrderService(store.Orders, new TestCurrentUser(), new OrderDraftValidator());
         await orders.CreateAsync(Draft("İçerde", new DateOnly(2026, 9, 10)));
         await orders.CreateAsync(Draft("Dışarıda", new DateOnly(2026, 8, 1)));
 
-        var report = await new ReportService(db).GetAsync(new ReportRequest
+        var report = await new ReportService(store.Reporting).GetAsync(new ReportRequest
         {
             Period = ReportPeriod.Weekly,
             DateField = ReportDateField.OrderDate,
@@ -33,14 +33,14 @@ public class ReportServiceTests
     [Fact]
     public async Task Report_ShouldExcludeCancelledByDefault()
     {
-        await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        await using var store = TestDb.CreateStore();
+        var orders = new OrderService(store.Orders, new TestCurrentUser(), new OrderDraftValidator());
         await orders.CreateAsync(Draft("Aktif", new DateOnly(2026, 9, 10)));
         var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
         var cancelled = await orders.GetAsync(cancelledId);
         await orders.ChangeStatusAsync(cancelledId, OrderStatus.Iptal, cancelled!.RowVersion);
 
-        var report = await new ReportService(db).GetAsync(new ReportRequest
+        var report = await new ReportService(store.Reporting).GetAsync(new ReportRequest
         {
             Period = ReportPeriod.Daily,
             Anchor = new DateOnly(2026, 9, 10)
@@ -54,13 +54,13 @@ public class ReportServiceTests
     [Fact]
     public async Task Report_ShouldListCancelled_WhenFiltered()
     {
-        await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        await using var store = TestDb.CreateStore();
+        var orders = new OrderService(store.Orders, new TestCurrentUser(), new OrderDraftValidator());
         var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
         var cancelled = await orders.GetAsync(cancelledId);
         await orders.ChangeStatusAsync(cancelledId, OrderStatus.Iptal, cancelled!.RowVersion);
 
-        var report = await new ReportService(db).GetAsync(new ReportRequest
+        var report = await new ReportService(store.Reporting).GetAsync(new ReportRequest
         {
             Period = ReportPeriod.Daily,
             Anchor = new DateOnly(2026, 9, 10),
@@ -73,14 +73,14 @@ public class ReportServiceTests
     [Fact]
     public async Task Report_ShouldIncludeCancelled_WhenSelectedWithOthers()
     {
-        await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        await using var store = TestDb.CreateStore();
+        var orders = new OrderService(store.Orders, new TestCurrentUser(), new OrderDraftValidator());
         await orders.CreateAsync(Draft("Aktif", new DateOnly(2026, 9, 10)));
         var cancelledId = await orders.CreateAsync(Draft("İptal", new DateOnly(2026, 9, 10)));
         var cancelled = await orders.GetAsync(cancelledId);
         await orders.ChangeStatusAsync(cancelledId, OrderStatus.Iptal, cancelled!.RowVersion);
 
-        var report = await new ReportService(db).GetAsync(new ReportRequest
+        var report = await new ReportService(store.Reporting).GetAsync(new ReportRequest
         {
             Period = ReportPeriod.Daily,
             Anchor = new DateOnly(2026, 9, 10),
@@ -94,10 +94,10 @@ public class ReportServiceTests
     [Fact]
     public async Task ExcelAndPdf_ShouldContainOrderNumber()
     {
-        await using var db = TestDb.Create();
-        var orders = new OrderService(db, new TestCurrentUser(), new OrderDraftValidator());
+        await using var store = TestDb.CreateStore();
+        var orders = new OrderService(store.Orders, new TestCurrentUser(), new OrderDraftValidator());
         await orders.CreateAsync(Draft("Rapor", new DateOnly(2026, 9, 10)));
-        var report = await new ReportService(db).GetAsync(new ReportRequest
+        var report = await new ReportService(store.Reporting).GetAsync(new ReportRequest
         {
             Period = ReportPeriod.Daily,
             Anchor = new DateOnly(2026, 9, 10)

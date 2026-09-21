@@ -26,29 +26,30 @@ public interface IDashboardService
 
 internal sealed class DashboardService : IDashboardService
 {
-    private readonly IReportingDbContext _db;
+    private readonly IReportingDbContextFactory _dbFactory;
 
-    public DashboardService(IReportingDbContext db)
+    public DashboardService(IReportingDbContextFactory dbFactory)
     {
-        _db = db;
+        _dbFactory = dbFactory;
     }
 
     public async Task<DashboardSnapshot> GetAsync(CancellationToken cancellationToken = default)
     {
+        await using var db = _dbFactory.CreateDbContext();
         var today = TurkeyTime.Today;
-        var orders = _db.Orders.AsQueryable();
+        var orders = db.Orders.AsQueryable();
 
         var todayCount = await OrderScopes.Apply(orders, OrderListScope.Today, today).CountAsync(cancellationToken);
         var openCount = await OrderScopes.Apply(orders, OrderListScope.Open, today).CountAsync(cancellationToken);
         var weekDeliveryCount = await OrderScopes.Apply(orders, OrderListScope.WeekDelivery, today).CountAsync(cancellationToken);
         var overdueCount = await OrderScopes.Apply(orders, OrderListScope.Overdue, today).CountAsync(cancellationToken);
 
-        var statusCounts = await _db.Orders
+        var statusCounts = await db.Orders
             .GroupBy(o => o.Status)
             .Select(g => new StatusCount(g.Key, g.Count()))
             .ToListAsync(cancellationToken);
 
-        var upcoming = await _db.Orders
+        var upcoming = await db.Orders
             .Where(o => o.DeliveryDate >= today && OrderScopes.Open.Contains(o.Status))
             .OrderBy(o => o.DeliveryDate)
             .Take(8)

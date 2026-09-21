@@ -15,9 +15,15 @@
             await JS.InvokeVoidAsync("ledkasaPwa.onOnlineChange", DotNetObjectReference.Create(this));
             StateHasChanged();
         }
-        catch (JSException)
-        {
-        }
+            catch (JSException)
+            {
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
     }
 
     [JSInvokable]
