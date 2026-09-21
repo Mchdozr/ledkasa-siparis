@@ -142,18 +142,27 @@ else if (_result is not null)
     private bool _queryApplied;
     private string _scopeLabel = string.Empty;
 
-    protected override Task OnParametersSetAsync()
+    protected override async Task OnParametersSetAsync()
     {
         if (_queryApplied && _appliedStatusQuery == StatusQuery && _appliedScopeQuery == ScopeQuery)
-            return Task.CompletedTask;
+            return;
 
-        OrderScopes.ApplyQuery(_filter, StatusQuery, ScopeQuery);
-        _from = null;
-        _scopeLabel = OrderScopes.Display(_filter.Scope);
-        _appliedStatusQuery = StatusQuery;
-        _appliedScopeQuery = ScopeQuery;
-        _queryApplied = true;
-        return SearchAsync(keepScope: true);
+        try
+        {
+            OrderScopes.ApplyQuery(_filter, StatusQuery, ScopeQuery);
+            _from = null;
+            _scopeLabel = OrderScopes.Display(_filter.Scope);
+            _appliedStatusQuery = StatusQuery;
+            _appliedScopeQuery = ScopeQuery;
+            _queryApplied = true;
+            await SearchAsync(keepScope: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Sipariş listesi parametreleri uygulanamadı");
+            _loadError = true;
+            _loading = false;
+        }
     }
 
     private Task ApplyFiltersAsync() => SearchAsync();

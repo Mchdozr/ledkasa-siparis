@@ -91,6 +91,20 @@ public class OrderServiceTests
     }
 
     [Fact]
+    public async Task List_ShouldFilterIptal()
+    {
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
+        await service.CreateAsync(Draft("Aktif"));
+        var cancelledId = await service.CreateAsync(Draft("IptalEdilen"));
+        await MoveTo(service, cancelledId, OrderStatus.Iptal);
+
+        var list = await service.ListAsync(new OrderListFilter { Status = OrderStatus.Iptal });
+        list.Items.Select(x => x.CustomerName).Should().Equal("IptalEdilen");
+        list.Items[0].Status.Should().Be(OrderStatus.Iptal);
+    }
+
+    [Fact]
     public async Task UserWithoutCreatePermission_ShouldBeRejected()
     {
         await using var store = TestDb.CreateStore();
