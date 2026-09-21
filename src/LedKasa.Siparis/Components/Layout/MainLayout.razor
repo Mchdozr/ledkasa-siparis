@@ -88,6 +88,12 @@
         catch (InvalidOperationException)
         {
         }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (TaskCanceledException)
+        {
+        }
     }
 
     public Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs args)
@@ -126,8 +132,22 @@
     public async ValueTask DisposeAsync()
     {
         Navigation.LocationChanged -= OnLocationChanged;
-        if (_subscribed)
+        if (!_subscribed)
+            return;
+
+        try
+        {
             await BrowserViewport.UnsubscribeAsync(this);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (TaskCanceledException)
+        {
+        }
     }
 
     private static bool IsDesktop(Breakpoint breakpoint) =>

@@ -15,9 +15,15 @@
             _canInstall = await JS.InvokeAsync<bool>("ledkasaPwa.canInstall");
             StateHasChanged();
         }
-        catch (JSException)
-        {
-        }
+            catch (JSException)
+            {
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
     }
 
     private async Task InstallAsync()

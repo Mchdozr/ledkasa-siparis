@@ -13,8 +13,8 @@ public class OrderServiceTests
     [Fact]
     public async Task Create_ShouldAssignDailyNumber_AndList()
     {
-        await using var db = TestDb.Create();
-        var service = CreateService(db);
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
         var draft = Draft("Ayşe Kaya");
 
         var id = await service.CreateAsync(draft);
@@ -29,14 +29,14 @@ public class OrderServiceTests
         detail.DeliveryPlace.Should().Be(DeliveryPlace.Fabrika);
         list.Items[0].TotalQuantity.Should().Be(4);
         list.TotalCount.Should().Be(1);
-        db.AuditLogs.Should().Contain(a => a.Action == "OrderCreated");
+        store.Db.AuditLogs.Should().Contain(a => a.Action == "OrderCreated");
     }
 
     [Fact]
     public async Task Create_ShouldPersistDepthAndCiftYon()
     {
-        await using var db = TestDb.Create();
-        var service = CreateService(db);
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
         var draft = Draft("Çift yön");
         draft.Items[0].DepthCm = 8;
         draft.Items[0].Side = PanelSide.CiftYon;
@@ -51,8 +51,8 @@ public class OrderServiceTests
     [Fact]
     public async Task Create_ShouldReject_InvalidDates()
     {
-        await using var db = TestDb.Create();
-        var service = CreateService(db);
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
         var draft = Draft("Ali");
         draft.DeliveryDate = draft.OrderDate.AddDays(-1);
 
@@ -63,8 +63,8 @@ public class OrderServiceTests
     [Fact]
     public async Task Create_ShouldPersistDeliveryPlaceAndShowOnList()
     {
-        await using var db = TestDb.Create();
-        var service = CreateService(db);
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
         var draft = Draft("FabrikaTeslim");
         draft.DeliveryPlace = DeliveryPlace.Fabrika;
 
@@ -79,8 +79,8 @@ public class OrderServiceTests
     [Fact]
     public async Task ChangeStatus_ShouldMoveToOnaylandi()
     {
-        await using var db = TestDb.Create();
-        var service = CreateService(db);
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
         var id = await service.CreateAsync(Draft("Deniz"));
         var created = await service.GetAsync(id);
 
@@ -93,20 +93,20 @@ public class OrderServiceTests
     [Fact]
     public async Task UserWithoutCreatePermission_ShouldBeRejected()
     {
-        await using var db = TestDb.Create();
-        var staff = CreateService(db, canCreateOrders: false);
+        await using var store = TestDb.CreateStore();
+        var staff = CreateService(store, canCreateOrders: false);
 
         var act = async () => await staff.CreateAsync(Draft("Personel"));
         await act.Should().ThrowAsync<DomainException>()
             .WithMessage("*oluşturma yetkiniz yok*");
-        db.Orders.Should().BeEmpty();
+        store.Db.Orders.Should().BeEmpty();
     }
 
     [Fact]
     public async Task ListPersonSuggestions_ShouldSeparatePreviousCustomersFromUsers()
     {
-        await using var db = TestDb.Create();
-        db.Users.AddRange(
+        await using var store = TestDb.CreateStore();
+        store.Db.Users.AddRange(
             new ApplicationUser
             {
                 Id = "u-ahmet",
@@ -128,8 +128,8 @@ public class OrderServiceTests
                 DisplayName = "Pasif Kişi",
                 IsActive = false
             });
-        await db.SaveChangesAsync();
-        var service = CreateService(db);
+        await store.Db.SaveChangesAsync();
+        var service = CreateService(store);
         await service.CreateAsync(Draft("Ayşe Kaya"));
         await service.CreateAsync(Draft("Mehmet Demir"));
         await service.CreateAsync(Draft("ayşe kaya"));
@@ -146,8 +146,8 @@ public class OrderServiceTests
     [Fact]
     public async Task List_ShouldApplySelectedSort()
     {
-        await using var db = TestDb.Create();
-        var service = CreateService(db);
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
         await service.CreateAsync(Draft("Orta", new DateOnly(2026, 9, 10), new DateOnly(2026, 9, 20)));
         await service.CreateAsync(Draft("Yeni", new DateOnly(2026, 9, 12), new DateOnly(2026, 9, 15)));
         await service.CreateAsync(Draft("Eski", new DateOnly(2026, 9, 8), new DateOnly(2026, 9, 30)));
@@ -161,8 +161,8 @@ public class OrderServiceTests
     [Fact]
     public async Task List_ShouldApplyDashboardScopes()
     {
-        await using var db = TestDb.Create();
-        var service = CreateService(db);
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
         var today = TurkeyTime.Today;
         var week = LedKasa.Siparis.Features.Reports.ReportPeriodCalculator.GetRange(
             LedKasa.Siparis.Features.Reports.ReportPeriod.Weekly, today);
@@ -180,6 +180,21 @@ public class OrderServiceTests
         (await Names(service, scope: OrderListScope.Open)).Should().BeEquivalentTo("Bugun", "DunAcik", "Geciken");
         (await Names(service, scope: OrderListScope.WeekDelivery)).Should().BeEquivalentTo("DunAcik", "Teslim");
         (await Names(service, scope: OrderListScope.Overdue)).Should().Equal("Geciken");
+    }
+
+    [Fact]
+    public async Task ListAsync_ShouldAllowConcurrentQueries()
+    {
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store);
+        await service.CreateAsync(Draft("Ayşe"));
+
+        var tasks = Enumerable.Range(0, 8)
+            .Select(_ => service.ListAsync(new OrderListFilter()))
+            .ToArray();
+
+        var results = await Task.WhenAll(tasks);
+        results.Select(r => r.TotalCount).Should().AllBeEquivalentTo(1);
     }
 
     private static async Task<string[]> Names(OrderService service, OrderSort sort = OrderSort.NewestFirst, OrderListScope scope = OrderListScope.None)
@@ -211,10 +226,8 @@ public class OrderServiceTests
         _ => throw new ArgumentOutOfRangeException(nameof(target), target, null)
     };
 
-    private static OrderService CreateService(
-        LedKasa.Siparis.Data.ApplicationDbContext db,
-        bool canCreateOrders = true)
-        => new(db, new TestCurrentUser { CanCreateOrders = canCreateOrders }, new OrderDraftValidator());
+    private static OrderService CreateService(TestDbStore store, bool canCreateOrders = true)
+        => new(store.Orders, new TestCurrentUser { CanCreateOrders = canCreateOrders }, new OrderDraftValidator());
 
     private static OrderDraft Draft(string name, DateOnly? orderDate = null, DateOnly? deliveryDate = null) => new()
     {

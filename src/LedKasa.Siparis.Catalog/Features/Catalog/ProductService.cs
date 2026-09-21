@@ -22,18 +22,19 @@ public interface IProductService
 
 internal sealed class ProductService : IProductService
 {
-    private readonly ICatalogDbContext _db;
+    private readonly ICatalogDbContextFactory _dbFactory;
     private readonly ICurrentUser _currentUser;
 
-    public ProductService(ICatalogDbContext db, ICurrentUser currentUser)
+    public ProductService(ICatalogDbContextFactory dbFactory, ICurrentUser currentUser)
     {
-        _db = db;
+        _dbFactory = dbFactory;
         _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<ProductDto>> ListAsync(bool activeOnly, CancellationToken cancellationToken = default)
     {
-        var query = _db.Products.AsNoTracking().AsQueryable();
+        await using var db = _dbFactory.CreateDbContext();
+        var query = db.Products.AsNoTracking().AsQueryable();
         if (activeOnly)
             query = query.Where(x => x.IsActive);
 
@@ -52,10 +53,11 @@ internal sealed class ProductService : IProductService
 
     public async Task<int> CreateAsync(string name, CancellationToken cancellationToken = default)
     {
-        var maxSort = await _db.Products.Select(x => (int?)x.SortOrder).MaxAsync(cancellationToken) ?? 0;
+        await using var db = _dbFactory.CreateDbContext();
+        var maxSort = await db.Products.Select(x => (int?)x.SortOrder).MaxAsync(cancellationToken) ?? 0;
         var product = Product.Create(name, maxSort + 1);
-        _db.Products.Add(product);
-        _db.AuditLogs.Add(new AuditLog
+        db.Products.Add(product);
+        db.AuditLogs.Add(new AuditLog
         {
             Action = "ProductCreated",
             EntityType = "Product",
@@ -64,18 +66,19 @@ internal sealed class ProductService : IProductService
             Details = name,
             CreatedAtUtc = DateTime.UtcNow
         });
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
         return product.Id;
     }
 
     public async Task UpdateAsync(int id, string name, bool isActive, int sortOrder, CancellationToken cancellationToken = default)
     {
-        var product = await _db.Products.FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+        await using var db = _dbFactory.CreateDbContext();
+        var product = await db.Products.FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new DomainException("Ürün bulunamadı.");
 
         product.Rename(name);
         product.SetActive(isActive);
         product.SetSortOrder(sortOrder);
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

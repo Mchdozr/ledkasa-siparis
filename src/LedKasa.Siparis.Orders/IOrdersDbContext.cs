@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LedKasa.Siparis.Features.Orders;
 
-public interface IOrdersDbContext
+public interface IOrdersDbContext : IAsyncDisposable
 {
     DbSet<Order> Orders { get; }
     DbSet<OrderItem> OrderItems { get; }
@@ -12,4 +12,9 @@ public interface IOrdersDbContext
     IQueryable<string> ActiveUserDisplayNames { get; }
     void SetOriginalRowVersion(Order order, DateTime rowVersion);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+}
+
+public interface IOrdersDbContextFactory
+{
+    IOrdersDbContext CreateDbContext();
 }

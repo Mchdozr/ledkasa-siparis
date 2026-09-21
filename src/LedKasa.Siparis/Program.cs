@@ -6,8 +6,10 @@ using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Features.Reports;
 using LedKasa.Siparis.Identity;
+using LedKasa.Siparis.Infrastructure;
 using LedKasa.Siparis.Security;
 using Microsoft.AspNetCore.Components.Server;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +33,11 @@ builder.Services.AddRazorComponents()
 builder.Services.Configure<CircuitOptions>(options =>
 {
     options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+    options.DetailedErrors = builder.Configuration.GetValue(
+        "Circuit:DetailedErrors",
+        builder.Environment.IsDevelopment());
 });
+builder.Services.AddScoped<CircuitHandler, CircuitLifecycleLogger>();
 
 builder.Services.AddMudServices();
 builder.Services.AddHttpContextAccessor();
@@ -41,8 +47,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection tanımlı değil.");
 
 var serverVersion = ServerVersion.Parse("10.4.34-mariadb");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, serverVersion));
+builder.Services.AddScoped(sp =>
+    sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
+builder.Services.AddSingleton<ApplicationModuleDbContextFactory>();
+builder.Services.AddSingleton<IOrdersDbContextFactory>(sp => sp.GetRequiredService<ApplicationModuleDbContextFactory>());
+builder.Services.AddSingleton<ICatalogDbContextFactory>(sp => sp.GetRequiredService<ApplicationModuleDbContextFactory>());
+builder.Services.AddSingleton<IReportingDbContextFactory>(sp => sp.GetRequiredService<ApplicationModuleDbContextFactory>());
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -80,9 +92,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddAuthorization(options => options.AddAppPolicies());
 
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-builder.Services.AddScoped<IOrdersDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
-builder.Services.AddScoped<ICatalogDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
-builder.Services.AddScoped<IReportingDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 builder.Services.AddOrdersModule();
 builder.Services.AddCatalogModule();
 builder.Services.AddReportingModule();
