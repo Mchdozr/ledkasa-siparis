@@ -59,6 +59,9 @@ public class OrderListErrorTests : TestContext
         public Task ChangeStatusAsync(int id, OrderStatus next, DateTime rowVersion, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
+        public Task DeleteAsync(int id, DateTime rowVersion, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task<PersonSuggestions> ListPersonSuggestionsAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(new PersonSuggestions([], []));
     }

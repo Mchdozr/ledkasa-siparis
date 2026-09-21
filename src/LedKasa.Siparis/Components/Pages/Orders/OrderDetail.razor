@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject ILogger<OrderDetail> Logger
+@inject IDialogService Dialogs
 
 <PageTitle>Sipariş detayı — LEDKASA</PageTitle>
 
@@ -33,6 +34,9 @@ else
                 {
                     <MudButton Variant="Variant.Outlined" Href="@($"/orders/{_order.Id}/edit")">Düzenle</MudButton>
                 }
+            </AuthorizeView>
+            <AuthorizeView Policy="@Policies.OrdersDelete">
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="DeleteAsync">Sil</MudButton>
             </AuthorizeView>
         </div>
     </PageHeader>
@@ -114,6 +118,29 @@ else
             await Orders.ChangeStatusAsync(_order.Id, next, _order.RowVersion);
             _order = await Orders.GetAsync(Id);
             Snackbar.Add("Durum güncellendi.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_order is null) return;
+        var confirmed = await Dialogs.ShowMessageBox(
+            "Siparişi sil",
+            $"{_order.OrderNumber} kalıcı olarak silinecek. Emin misiniz?",
+            yesText: "Sil",
+            cancelText: "Vazgeç");
+        if (confirmed != true)
+            return;
+
+        try
+        {
+            await Orders.DeleteAsync(_order.Id, _order.RowVersion);
+            Snackbar.Add("Sipariş silindi.", Severity.Success);
+            Navigation.NavigateTo("/orders");
         }
         catch (Exception ex)
         {

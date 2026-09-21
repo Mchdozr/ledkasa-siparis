@@ -9,4 +9,5 @@ internal sealed class TestCurrentUser : ICurrentUser
     public string? DisplayName { get; init; } = "Test";
     public string? UserName { get; init; } = "test@ledkasa.com.tr";
     public bool CanCreateOrders { get; init; } = true;
+    public bool CanDeleteOrders { get; init; }
 }

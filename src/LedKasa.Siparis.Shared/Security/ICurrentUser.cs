@@ -7,4 +7,5 @@ public interface ICurrentUser
     string? DisplayName { get; }
     string? UserName { get; }
     bool CanCreateOrders { get; }
+    bool CanDeleteOrders { get; }
 }

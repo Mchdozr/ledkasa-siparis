@@ -91,6 +91,34 @@ public class OrderServiceTests
     }
 
     [Fact]
+    public async Task Delete_ShouldRemoveOrder_AndAudit()
+    {
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store, canDeleteOrders: true);
+        var id = await service.CreateAsync(Draft("Silinecek"));
+        var created = await service.GetAsync(id);
+
+        await service.DeleteAsync(id, created!.RowVersion);
+
+        (await service.GetAsync(id)).Should().BeNull();
+        (await service.ListAsync(new OrderListFilter())).TotalCount.Should().Be(0);
+        store.Db.AuditLogs.Should().Contain(a => a.Action == "OrderDeleted");
+    }
+
+    [Fact]
+    public async Task Delete_ShouldReject_WithoutPermission()
+    {
+        await using var store = TestDb.CreateStore();
+        var service = CreateService(store, canDeleteOrders: false);
+        var id = await service.CreateAsync(Draft("Kalsın"));
+        var created = await service.GetAsync(id);
+
+        var act = async () => await service.DeleteAsync(id, created!.RowVersion);
+        await act.Should().ThrowAsync<DomainException>().WithMessage("*silme yetkiniz yok*");
+        (await service.GetAsync(id)).Should().NotBeNull();
+    }
+
+    [Fact]
     public async Task List_ShouldFilterIptal()
     {
         await using var store = TestDb.CreateStore();
@@ -240,8 +268,8 @@ public class OrderServiceTests
         _ => throw new ArgumentOutOfRangeException(nameof(target), target, null)
     };
 
-    private static OrderService CreateService(TestDbStore store, bool canCreateOrders = true)
-        => new(store.Orders, new TestCurrentUser { CanCreateOrders = canCreateOrders }, new OrderDraftValidator());
+    private static OrderService CreateService(TestDbStore store, bool canCreateOrders = true, bool canDeleteOrders = false)
+        => new(store.Orders, new TestCurrentUser { CanCreateOrders = canCreateOrders, CanDeleteOrders = canDeleteOrders }, new OrderDraftValidator());
 
     private static OrderDraft Draft(string name, DateOnly? orderDate = null, DateOnly? deliveryDate = null) => new()
     {

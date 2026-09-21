@@ -51,6 +51,8 @@ public sealed class CurrentUser : ICurrentUser, IDisposable
         }
     }
 
+    public bool CanDeleteOrders => Policies.CanDeleteOrders(User);
+
     public void Dispose() => _auth.AuthenticationStateChanged -= OnAuthenticationStateChanged;
 
     private ClaimsPrincipal User

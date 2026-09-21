@@ -21,6 +21,18 @@ public class CurrentUserTests
     }
 
     [Fact]
+    public void CanDeleteOrders_ShouldAllowYoneticiAndTestUser()
+    {
+        using var admin = new CurrentUser(new NullHttp(), new FixedAuth(Principal(AppRoles.Yonetici, "u-admin", "admin")));
+        using var test = new CurrentUser(new NullHttp(), new FixedAuth(Principal(AppRoles.SiparisPersoneli, "u-test", "test")));
+        using var staff = new CurrentUser(new NullHttp(), new FixedAuth(Principal(AppRoles.SiparisPersoneli, "u-2", "personel1")));
+
+        admin.CanDeleteOrders.Should().BeTrue();
+        test.CanDeleteOrders.Should().BeTrue();
+        staff.CanDeleteOrders.Should().BeFalse();
+    }
+
+    [Fact]
     public void UserId_ShouldThrow_WhenAnonymous()
     {
         using var sut = new CurrentUser(new NullHttp(), new FixedAuth(new ClaimsPrincipal(new ClaimsIdentity())));
@@ -28,10 +40,11 @@ public class CurrentUserTests
         act.Should().Throw<InvalidOperationException>();
     }
 
-    private static ClaimsPrincipal Principal(string role, string userId) =>
+    private static ClaimsPrincipal Principal(string role, string userId, string? userName = null) =>
         new(new ClaimsIdentity(
         [
             new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Name, userName ?? userId),
             new Claim(ClaimTypes.Role, role),
             new Claim("display_name", "Test")
         ], "test"));

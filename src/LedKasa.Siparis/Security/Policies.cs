@@ -9,6 +9,7 @@ public static class Policies
     public const string OrdersCreate = "Orders.Create";
     public const string OrdersEdit = "Orders.Edit";
     public const string OrdersChangeStatus = "Orders.ChangeStatus";
+    public const string OrdersDelete = "Orders.Delete";
     public const string ReportsView = "Reports.View";
     public const string AdminUsers = "Admin.Users";
     public const string AdminFeatures = "Admin.Features";
@@ -17,7 +18,7 @@ public static class Policies
     {
         AppRoles.Yonetici =>
         [
-            OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus,
+            OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus, OrdersDelete,
             ReportsView, AdminUsers, AdminFeatures
         ],
         AppRoles.SiparisPersoneli =>
@@ -40,6 +41,7 @@ public static class Policies
                 builder.RequireAuthenticatedUser();
                 builder.RequireAssertion(ctx =>
                     ctx.User.IsInRole(AppRoles.Yonetici) ||
+                    (policy == OrdersDelete && CanDeleteOrders(ctx.User)) ||
                     RoleGrantsPolicy(ctx.User, policy));
             });
         }
@@ -47,9 +49,23 @@ public static class Policies
 
     private static readonly string[] All =
     [
-        OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus,
+        OrdersView, OrdersCreate, OrdersEdit, OrdersChangeStatus, OrdersDelete,
         ReportsView, AdminUsers, AdminFeatures
     ];
+
+    public const string OrdersDeleteUserName = "test";
+
+    public static bool CanDeleteOrders(System.Security.Claims.ClaimsPrincipal user)
+    {
+        if (user.Identity?.IsAuthenticated != true)
+            return false;
+        if (user.IsInRole(AppRoles.Yonetici))
+            return true;
+
+        var name = user.Identity.Name
+            ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+        return string.Equals(name, OrdersDeleteUserName, StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool RoleGrantsPolicy(System.Security.Claims.ClaimsPrincipal user, string policy)
     {

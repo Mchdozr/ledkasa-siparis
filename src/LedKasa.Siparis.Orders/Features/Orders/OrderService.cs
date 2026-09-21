@@ -14,6 +14,7 @@ public interface IOrderService
     Task<int> CreateAsync(OrderDraft draft, CancellationToken cancellationToken = default);
     Task UpdateAsync(int id, OrderDraft draft, DateTime rowVersion, CancellationToken cancellationToken = default);
     Task ChangeStatusAsync(int id, OrderStatus next, DateTime rowVersion, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int id, DateTime rowVersion, CancellationToken cancellationToken = default);
     Task<PersonSuggestions> ListPersonSuggestionsAsync(CancellationToken cancellationToken = default);
 }
 
@@ -171,6 +172,20 @@ internal sealed class OrderService : IOrderService
         var previous = order.Status;
         order.TransitionTo(next, _currentUser.UserId);
         AddAudit(db, "OrderStatusChanged", "Order", order.Id.ToString(), $"{DisplayNames.Status(previous)} → {DisplayNames.Status(next)}");
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(int id, DateTime rowVersion, CancellationToken cancellationToken = default)
+    {
+        if (!_currentUser.CanDeleteOrders)
+            throw new DomainException("Sipariş silme yetkiniz yok.");
+
+        await using var db = _dbFactory.CreateDbContext();
+        var order = await LoadTrackedAsync(db, id, cancellationToken);
+        db.SetOriginalRowVersion(order, rowVersion);
+        AddAudit(db, "OrderDeleted", "Order", order.Id.ToString(), order.OrderNumber);
+        db.OrderItems.RemoveRange(order.Items);
+        db.Orders.Remove(order);
         await db.SaveChangesAsync(cancellationToken);
     }
 
