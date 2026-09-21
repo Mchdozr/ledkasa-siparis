@@ -8,7 +8,7 @@ public static class OrdersModule
     public static IServiceCollection AddOrdersModule(this IServiceCollection services)
     {
         services.AddScoped<IOrderService, OrderService>();
-        services.AddValidatorsFromAssemblyContaining<OrderDraftValidator>();
+        services.AddScoped<IValidator<OrderDraft>, OrderDraftValidator>();
         return services;
     }
 }
