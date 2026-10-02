@@ -40,44 +40,10 @@ internal sealed class OrderService : IOrderService
         var page = Math.Max(1, filter.Page);
         var pageSize = Math.Clamp(filter.PageSize, 5, 100);
 
-        var query = db.Orders.AsNoTracking().Include(o => o.Items).AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(filter.Search))
-        {
-            var term = filter.Search.Trim();
-            query = query.Where(o => o.OrderNumber.Contains(term) || o.CustomerName.Contains(term));
-        }
-
-        if (filter.Scope != OrderListScope.None)
-        {
-            query = OrderScopes.Apply(query, filter.Scope, TurkeyTime.Today);
-        }
-        else
-        {
-            if (filter.Status.HasValue)
-                query = query.Where(o => o.Status == filter.Status.Value);
-
-            if (filter.DateField == ReportDateFieldKind.DeliveryDate)
-            {
-                if (filter.From.HasValue)
-                    query = query.Where(o => o.DeliveryDate >= filter.From.Value);
-                if (filter.To.HasValue)
-                    query = query.Where(o => o.DeliveryDate <= filter.To.Value);
-            }
-            else
-            {
-                if (filter.From.HasValue)
-                    query = query.Where(o => o.OrderDate >= filter.From.Value);
-                if (filter.To.HasValue)
-                    query = query.Where(o => o.OrderDate <= filter.To.Value);
-            }
-        }
-
-        if (filter.DeliveryPlace.HasValue)
-            query = query.Where(o => o.DeliveryPlace == filter.DeliveryPlace.Value);
+        var query = db.Orders.AsNoTracking().Include(o => o.Items).ApplyFilter(filter, TurkeyTime.Today);
 
         var total = await query.CountAsync(cancellationToken);
-        var items = await ApplySort(query, filter.Sort)
+        var items = await query.ApplySort(filter.Sort)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(o => new OrderListItemDto
@@ -227,16 +193,6 @@ internal sealed class OrderService : IOrderService
 
         return OrderNumberFormatter.Format(orderDate, next);
     }
-
-    private static IOrderedQueryable<Order> ApplySort(IQueryable<Order> query, OrderSort sort) =>
-        sort switch
-        {
-            OrderSort.NewestFirst => query.OrderByDescending(o => o.OrderDate).ThenByDescending(o => o.Id),
-            OrderSort.OldestFirst => query.OrderBy(o => o.OrderDate).ThenBy(o => o.Id),
-            OrderSort.NearestDelivery => query.OrderBy(o => o.DeliveryDate).ThenBy(o => o.Id),
-            OrderSort.FarthestDelivery => query.OrderByDescending(o => o.DeliveryDate).ThenByDescending(o => o.Id),
-            _ => throw new ArgumentOutOfRangeException(nameof(sort), sort, null)
-        };
 
     private static OrderItem ToItem(OrderItemInput input) =>
         OrderItem.Create(input.ProductId, input.WidthCm, input.HeightCm, input.DepthCm, input.Quantity, input.Side, input.Note);

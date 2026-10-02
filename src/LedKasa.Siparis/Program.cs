@@ -129,6 +129,8 @@ app.MapPost("/account/logout", async (SignInManager<ApplicationUser> signIn) =>
 
 app.MapGet("/exports/orders.xlsx", ExportExcelAsync).RequireAuthorization(Policies.ReportsView);
 app.MapGet("/exports/orders.pdf", ExportPdfAsync).RequireAuthorization(Policies.ReportsView);
+app.MapGet("/exports/orders/filtered.xlsx", ExportFilteredExcelAsync).RequireAuthorization(Policies.OrdersView);
+app.MapGet("/exports/orders/filtered.pdf", ExportFilteredPdfAsync).RequireAuthorization(Policies.OrdersView);
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
@@ -221,5 +223,53 @@ static async Task<IResult> ExportPdfAsync(
     return Results.File(bytes, "application/pdf",
         $"ledkasa-siparis-{result.From:yyyyMMdd}-{result.To:yyyyMMdd}.pdf");
 }
+
+static async Task<IResult> ExportFilteredExcelAsync(
+    IReportService reports,
+    IExcelReportExporter exporter,
+    string? search = null,
+    OrderStatus? status = null,
+    DeliveryPlace? place = null,
+    DateOnly? from = null,
+    DateOnly? to = null,
+    ReportDateFieldKind dateField = ReportDateFieldKind.OrderDate,
+    OrderSort sort = OrderSort.NewestFirst,
+    string? scope = null)
+{
+    var result = await reports.GetForOrderListAsync(BuildListFilter(search, status, place, from, to, dateField, sort, scope));
+    return Results.File(exporter.Export(result), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        $"ledkasa-siparisler-{LedKasa.Siparis.Common.TurkeyTime.Today:yyyyMMdd}.xlsx");
+}
+
+static async Task<IResult> ExportFilteredPdfAsync(
+    IReportService reports,
+    IPdfReportExporter exporter,
+    string? search = null,
+    OrderStatus? status = null,
+    DeliveryPlace? place = null,
+    DateOnly? from = null,
+    DateOnly? to = null,
+    ReportDateFieldKind dateField = ReportDateFieldKind.OrderDate,
+    OrderSort sort = OrderSort.NewestFirst,
+    string? scope = null)
+{
+    var result = await reports.GetForOrderListAsync(BuildListFilter(search, status, place, from, to, dateField, sort, scope));
+    return Results.File(exporter.Export(result), "application/pdf",
+        $"ledkasa-siparisler-{LedKasa.Siparis.Common.TurkeyTime.Today:yyyyMMdd}.pdf");
+}
+
+static OrderListFilter BuildListFilter(
+    string? search, OrderStatus? status, DeliveryPlace? place, DateOnly? from, DateOnly? to,
+    ReportDateFieldKind dateField, OrderSort sort, string? scope) => new()
+{
+    Search = search,
+    Status = status,
+    DeliveryPlace = place,
+    From = from,
+    To = to,
+    DateField = dateField,
+    Sort = sort,
+    Scope = OrderScopes.Parse(scope)
+};
 
 public partial class Program;

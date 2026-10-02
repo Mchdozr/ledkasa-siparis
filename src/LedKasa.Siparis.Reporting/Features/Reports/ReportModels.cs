@@ -23,6 +23,7 @@ public sealed class ReportRow
     public int ItemCount { get; init; }
     public int TotalQuantity { get; init; }
     public string ItemSummary { get; init; } = string.Empty;
+    public string? Notes { get; init; }
 }
 
 public sealed class ReportResult
@@ -33,5 +34,6 @@ public sealed class ReportResult
     public int OrderCount { get; init; }
     public int ItemCount { get; init; }
     public int TotalQuantity { get; init; }
+    public bool IncludeNotes { get; init; }
     public IReadOnlyList<ReportRow> Rows { get; init; } = [];
 }

@@ -20,9 +20,9 @@
 <MudPaper Class="lk-card pa-4 mb-4" Elevation="0">
     <MudGrid Spacing="2">
         <MudItem xs="12" md="3">
-            <MudTextField @bind-Value="_filter.Search" Label="Sipariş no / kişi" Variant="Variant.Outlined"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          Immediate="false" OnKeyDown="OnSearchKey" />
+            <CustomerNameField Value="@(_filter.Search ?? string.Empty)" ValueChanged="OnSearchValueChanged"
+                               Label="Sipariş no / kişi" Required="false" FreeTextSearch="true"
+                               AdornmentIcon="@Icons.Material.Filled.Search" OnEnter="() => SearchAsync()" />
         </MudItem>
         <MudItem xs="6" md="2">
             <MudSelect T="OrderStatus?" @bind-Value="_filter.Status" Label="Durum" Variant="Variant.Outlined" Clearable="true">
@@ -74,6 +74,14 @@ else if (_result is { TotalCount: 0 })
 }
 else if (_result is not null)
 {
+    <div class="lk-actions mb-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="@ExportUrl("xlsx")"
+                   StartIcon="@Icons.Material.Filled.TableView" UserAttributes="DownloadAttr">Excel indir</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="@ExportUrl("pdf")"
+                   StartIcon="@Icons.Material.Filled.PictureAsPdf" UserAttributes="DownloadAttr">PDF indir</MudButton>
+        <MudText Color="Color.Secondary">Filtrelenmiş @_result.TotalCount sipariş</MudText>
+    </div>
+
     <div class="d-none d-md-block">
         <MudTable Items="_result.Items" Hover="true" Breakpoint="Breakpoint.None" Elevation="0" Class="lk-table">
             <HeaderContent>
@@ -126,6 +134,9 @@ else if (_result is not null)
     private PagedResult<OrderListItemDto>? _result;
     private bool _loading = true;
     private bool _loadError;
+    private OrderListFilter _applied = new();
+
+    private static readonly Dictionary<string, object> DownloadAttr = new() { ["download"] = "" };
 
     private int PageCount => _result is null || _result.PageSize == 0
         ? 1
@@ -169,9 +180,10 @@ else if (_result is not null)
 
     private Task RetryAsync() => SearchAsync(keepScope: true);
 
-    private async Task OnSearchKey(KeyboardEventArgs e)
+    private async Task OnSearchValueChanged(string? value)
     {
-        if (e.Key == "Enter")
+        _filter.Search = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        if (_filter.Search != _applied.Search)
             await SearchAsync();
     }
 
@@ -193,6 +205,17 @@ else if (_result is not null)
         _loadError = false;
         _filter.From = _from is null ? null : DateOnly.FromDateTime(_from.Value);
         _filter.Page = 1;
+        _applied = new OrderListFilter
+        {
+            Search = _filter.Search,
+            Status = _filter.Status,
+            DeliveryPlace = _filter.DeliveryPlace,
+            From = _filter.From,
+            To = _filter.To,
+            DateField = _filter.DateField,
+            Sort = _filter.Sort,
+            Scope = _filter.Scope
+        };
         try
         {
             _result = await Orders.ListAsync(_filter);
@@ -228,6 +251,39 @@ else if (_result is not null)
             _loading = false;
         }
     }
+
+    private string ExportUrl(string ext)
+    {
+        var query = new List<string>
+        {
+            $"dateField={(int)_applied.DateField}",
+            $"sort={(int)_applied.Sort}"
+        };
+        if (!string.IsNullOrWhiteSpace(_applied.Search))
+            query.Add($"search={Uri.EscapeDataString(_applied.Search.Trim())}");
+        if (_applied.Status.HasValue)
+            query.Add($"status={(int)_applied.Status.Value}");
+        if (_applied.DeliveryPlace.HasValue)
+            query.Add($"place={(int)_applied.DeliveryPlace.Value}");
+        if (_applied.From.HasValue)
+            query.Add($"from={_applied.From.Value:yyyy-MM-dd}");
+        if (_applied.To.HasValue)
+            query.Add($"to={_applied.To.Value:yyyy-MM-dd}");
+        var scope = ScopeQueryValue(_applied.Scope);
+        if (scope is not null)
+            query.Add($"scope={scope}");
+        return $"/exports/orders/filtered.{ext}?{string.Join('&', query)}";
+    }
+
+    private static string? ScopeQueryValue(OrderListScope scope) => scope switch
+    {
+        OrderListScope.None => null,
+        OrderListScope.Today => OrderScopes.TodayQuery,
+        OrderListScope.Open => OrderScopes.OpenQuery,
+        OrderListScope.WeekDelivery => OrderScopes.WeekQuery,
+        OrderListScope.Overdue => OrderScopes.OverdueQuery,
+        _ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null)
+    };
 
     private void Open(int id) => Navigation.NavigateTo($"/orders/{id}");
 }

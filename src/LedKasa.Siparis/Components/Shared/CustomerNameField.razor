@@ -2,11 +2,16 @@
 
 <MudAutocomplete T="string"
                  Value="Value"
-                 ValueChanged="ValueChanged"
-                 Label="Sipariş veren kişi"
+                 ValueChanged="HandleValueChangedAsync"
+                 Label="@Label"
                  Variant="Variant.Outlined"
-                 Required="true"
+                 Required="Required"
                  RequiredError="Sipariş veren kişi zorunludur."
+                 Adornment="@(AdornmentIcon is null ? Adornment.End : Adornment.Start)"
+                 AdornmentIcon="@AdornmentIcon"
+                 OnKeyDown="HandleKeyDown"
+                 OnKeyUp="HandleKeyUpAsync"
+                 ItemTemplate="@(FreeTextSearch ? SearchItemTemplate : null)"
                  SearchFunc="SearchAsync"
                  MinCharacters="0"
                  MaxItems="@((int?)null)"
@@ -25,9 +30,42 @@
 @code {
     [Parameter] public string Value { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "Sipariş veren kişi";
+    [Parameter] public bool Required { get; set; } = true;
+    [Parameter] public EventCallback OnEnter { get; set; }
+    [Parameter] public string? AdornmentIcon { get; set; }
+    [Parameter] public bool FreeTextSearch { get; set; }
 
     private PersonSuggestions _suggestions = new([], []);
+    private string? _typedText;
     private Task? _loadTask;
+    private bool _enterDown;
+    private bool _changedDuringEnter;
+
+    private async Task HandleValueChangedAsync(string value)
+    {
+        if (_enterDown)
+            _changedDuringEnter = true;
+        await ValueChanged.InvokeAsync(value);
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or "NumpadEnter")
+            _enterDown = true;
+    }
+
+    private async Task HandleKeyUpAsync(KeyboardEventArgs e)
+    {
+        if (e.Key is not ("Enter" or "NumpadEnter"))
+            return;
+
+        var alreadyApplied = _changedDuringEnter;
+        _enterDown = false;
+        _changedDuringEnter = false;
+        if (!alreadyApplied)
+            await OnEnter.InvokeAsync();
+    }
 
     protected override Task OnInitializedAsync() => EnsureAsync();
 
@@ -52,9 +90,37 @@
     {
         await EnsureAsync();
         var trimmed = value?.Trim() ?? string.Empty;
+        if (FreeTextSearch)
+        {
+            if (trimmed.Length == 0)
+                return _suggestions.PreviousCustomers.Prepend(string.Empty);
+
+            _typedText = trimmed;
+            return PersonNameSearch.Filter(_suggestions.All, trimmed)
+                .Where(name => !string.Equals(name, trimmed, StringComparison.Ordinal))
+                .Prepend(trimmed);
+        }
+
         if (trimmed.Length == 0 || string.Equals(trimmed, Value, StringComparison.Ordinal))
             return _suggestions.PreviousCustomers;
 
         return PersonNameSearch.Filter(_suggestions.All, trimmed);
     }
+
+    private RenderFragment<string> SearchItemTemplate => item => @<span>
+        @if (string.IsNullOrEmpty(item))
+        {
+            <MudIcon Icon="@Icons.Material.Filled.List" Size="Size.Small" Class="mr-2" Style="vertical-align: middle;" />
+            <span>Tüm siparişler</span>
+        }
+        else if (string.Equals(item, _typedText, StringComparison.Ordinal) && !_suggestions.All.Contains(item))
+        {
+            <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" Class="mr-2" Style="vertical-align: middle;" />
+            <span>"@item" ile ara</span>
+        }
+        else
+        {
+            @item
+        }
+    </span>;
 }

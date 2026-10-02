@@ -2,6 +2,7 @@ using Bunit;
 using Bunit.TestDoubles;
 using FluentAssertions;
 using LedKasa.Siparis.Components.Pages.Orders;
+using LedKasa.Siparis.Components.Shared;
 using LedKasa.Siparis.Features.Orders;
 using LedKasa.Siparis.Features.Orders.Domain;
 using LedKasa.Siparis.Identity;
@@ -42,6 +43,69 @@ public class OrderListStatusQueryTests : TestContext
         cut.Markup.Should().NotContain("Siparişler yüklenemedi");
     }
 
+    [Fact]
+    public void SearchBox_ShouldUseCustomerSuggestions()
+    {
+        var cut = RenderList();
+
+        var field = cut.FindComponent<CustomerNameField>();
+        field.Instance.Label.Should().Be("Sipariş no / kişi");
+        field.Instance.Required.Should().BeFalse();
+        _orders.SuggestionCalls.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task SelectingSuggestion_ShouldApplySearch()
+    {
+        var cut = RenderList();
+        var field = cut.FindComponent<CustomerNameField>();
+
+        await cut.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync("Ayşe Yılmaz"));
+
+        _orders.LastFilter!.Search.Should().Be("Ayşe Yılmaz");
+    }
+
+    [Fact]
+    public async Task EnterInSearch_ShouldApplyTypedText()
+    {
+        var cut = RenderList();
+        var field = cut.FindComponent<CustomerNameField>();
+
+        await cut.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync("LK-2026"));
+        var calls = _orders.ListCalls;
+        await cut.InvokeAsync(() => field.Instance.OnEnter.InvokeAsync());
+
+        _orders.LastFilter!.Search.Should().Be("LK-2026");
+        _orders.ListCalls.Should().Be(calls + 1);
+    }
+
+    [Fact]
+    public async Task SearchSuggestions_ShouldKeepTypedTextFirst()
+    {
+        var cut = RenderList();
+        var autocomplete = cut.FindComponent<MudAutocomplete<string>>();
+
+        var partial = (await autocomplete.Instance.SearchFunc!("Ayş", CancellationToken.None)).ToList();
+        var orderNo = (await autocomplete.Instance.SearchFunc!("LK-2026", CancellationToken.None)).ToList();
+
+        partial.Should().Equal("Ayş", "Ayşe Yılmaz");
+        orderNo.Should().Equal("LK-2026");
+    }
+
+    [Fact]
+    public async Task EmptySearch_FirstSuggestion_ShouldShowAllOrders()
+    {
+        var cut = RenderList();
+        await cut.InvokeAsync(() => cut.FindComponent<CustomerNameField>().Instance.ValueChanged.InvokeAsync("Ayşe Yılmaz"));
+        var autocomplete = cut.FindComponent<MudAutocomplete<string>>();
+
+        var empty = (await autocomplete.Instance.SearchFunc!("", CancellationToken.None)).ToList();
+        empty.Should().Equal("", "Ayşe Yılmaz");
+
+        await cut.InvokeAsync(() => cut.FindComponent<CustomerNameField>().Instance.ValueChanged.InvokeAsync(empty[0]));
+        _orders.LastFilter!.Search.Should().BeNull();
+    }
+
     private IRenderedFragment RenderList()
     {
         return Render(builder =>
@@ -56,10 +120,13 @@ public class OrderListStatusQueryTests : TestContext
     private sealed class CapturingOrders : IOrderService
     {
         public OrderListFilter? LastFilter { get; private set; }
+        public int ListCalls { get; private set; }
+        public int SuggestionCalls { get; private set; }
 
         public Task<PagedResult<OrderListItemDto>> ListAsync(OrderListFilter filter, CancellationToken cancellationToken = default)
         {
             LastFilter = filter;
+            ListCalls++;
             return Task.FromResult(new PagedResult<OrderListItemDto>
             {
                 Items =
@@ -99,6 +166,9 @@ public class OrderListStatusQueryTests : TestContext
             => Task.CompletedTask;
 
         public Task<PersonSuggestions> ListPersonSuggestionsAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(new PersonSuggestions([], []));
+        {
+            SuggestionCalls++;
+            return Task.FromResult(new PersonSuggestions(["Ayşe Yılmaz"], ["Ayşe Yılmaz"]));
+        }
     }
 }

@@ -43,7 +43,6 @@ internal sealed class PdfReportExporter : IPdfReportExporter
         var headerFont = new XFont(ReportFontResolver.Family, 8, XFontStyle.Bold);
         var cellFont = new XFont(ReportFontResolver.Family, 8, XFontStyle.Regular);
         var footerFont = new XFont(ReportFontResolver.Family, 8, XFontStyle.Regular);
-
         const double margin = 28;
         const double headerHeight = 18;
         const double lineHeight = 10.5;
@@ -109,15 +108,30 @@ internal sealed class PdfReportExporter : IPdfReportExporter
             var wrapped = values
                 .Select((value, i) => PdfCellText.Wrap(gfx!, value, cellFont, widths[i] - 4))
                 .ToArray();
-            var thisRowHeight = Math.Max(16, wrapped.Max(lines => lines.Count) * lineHeight + rowPad * 2);
+            var cellsHeight = Math.Max(16, wrapped.Max(lines => lines.Count) * lineHeight + rowPad * 2);
+            var noteLines = report.IncludeNotes && !string.IsNullOrWhiteSpace(row.Notes)
+                ? WrapNote(gfx!, "Not: " + row.Notes.Trim(), cellFont, widths.Sum() - 8)
+                : [];
+            var noteHeight = noteLines.Count == 0 ? 0 : noteLines.Count * lineHeight + rowPad;
+            var thisRowHeight = cellsHeight + noteHeight;
 
             if (y + thisRowHeight > page!.Height - margin - 16)
                 NewPage();
 
+            for (var line = 0; line < noteLines.Count; line++)
+            {
+                gfx!.DrawString(
+                    noteLines[line],
+                    cellFont,
+                    TextBrush,
+                    new XRect(xs[0] + 4, y + cellsHeight + line * lineHeight, widths.Sum() - 8, lineHeight),
+                    new XStringFormat { Alignment = XStringAlignment.Near, LineAlignment = XLineAlignment.Center });
+            }
+
             for (var i = 0; i < wrapped.Length; i++)
             {
                 var state = gfx!.Save();
-                gfx.IntersectClip(new XRect(xs[i], y, widths[i], thisRowHeight));
+                gfx.IntersectClip(new XRect(xs[i], y, widths[i], cellsHeight));
                 for (var line = 0; line < wrapped[i].Count; line++)
                 {
                     gfx.DrawString(
@@ -151,6 +165,12 @@ internal sealed class PdfReportExporter : IPdfReportExporter
         document.Save(stream, false);
         return stream.ToArray();
     }
+
+    private static List<string> WrapNote(XGraphics gfx, string note, XFont font, double maxWidth) =>
+        note.ReplaceLineEndings("\n")
+            .Split('\n')
+            .SelectMany(paragraph => PdfCellText.Wrap(gfx, paragraph, font, maxWidth))
+            .ToList();
 
     private static (double[] xs, double[] widths) BuildColumns(double tableWidth, double margin)
     {
